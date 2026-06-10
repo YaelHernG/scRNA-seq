@@ -17,7 +17,7 @@ El pipeline bioinformático consistió en lectura de matrices procesadas de GEO 
 ## Enlaces Importantes
 * **Reporte Renderizado (Quarto/HTML):** [Reporte](https://yaelherng.github.io/scRNA-seq/)
 * **Objeto Seurat Final (Zenodo):** Debido a restricciones de tamaño de GitHub, el objeto `.rds` con la anotación completa, reducciones dimensionales y metadatos puede descargarse desde el siguiente enlace de acceso restringido en Zenodo: [Descargar GSE218185_CML_anotado.rds](https://zenodo.org/records/20631502?token=eyJhbGciOiJIUzUxMiJ9.eyJpZCI6IjZhMTJkNDdjLTAyYTAtNDJhNC1hYTZlLWMzOGZhYjdiMzA5ZSIsImRhdGEiOnt9LCJyYW5kb20iOiJmZTZhMDRiOTk1ZDA2NDJkMzhhY2FmNGQ4NzI4OWExYiJ9.mRd_Gtf8Deqoj9unEMLkNLwUOenHcBD5PB0sRsrpbkqJqMNot6-3NXpCLZ8ReZ0afW1UJJYxYgAONYMq4_Pa3Q)
-
+* **Infografia:** [Ver infografia](https://github.com/YaelHernG/scRNA-seq/blob/40f7034bba3da7260eb52263c80d1b36b566aa5a/Activating%20p53%20abolishes%20self-renewal%20of%20quiescent%20leukaemic%20stem%20cells%20in%20residual%20CML%20disease.pdf)
 ---
 
 ## Flujo de Trabajo y Estructura del Proyecto
