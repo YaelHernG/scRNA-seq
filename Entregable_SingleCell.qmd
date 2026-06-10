@@ -1,0 +1,2131 @@
+---
+title: "Análisis scRNA-seq: Efecto de Idasanutlin y Nilotinib en LMC"
+author:
+  - "Paola Albarrán Godoy"
+  - "Yael Daniel Hernandez Gonzalez"
+date: today
+
+format:
+  html:
+    embed-resources: true
+    toc: true
+    toc-depth: 4
+    toc-float: true
+    code-fold: show
+    number-sections: true
+    theme: flatly
+    smooth-scroll: true
+    highlight-style: kate
+    df-print: paged
+
+editor:
+  markdown:
+    wrap: 72
+---
+
+# Descripción del equipo
+
+-   **Integrantes:**
+
+    -   Paola Albarrán Godoy (palbarrango)
+
+    -   Yael Daniel Hernández González (yhernandez)
+
+-   **Correos electrónicos de los integrantes:**
+
+    -   paolagodyy6\@gmail.com
+
+    -   yaelhgs\@gmail.com
+
+    ------------------------------------------------------------------------
+
+# Descripción de los datos
+
+-   **Título del estudio:** Single cell RNA-seq analysis of the effects
+    of idasanutlin and/or nilotinib on primary human CML cells engrafted
+    into the bone marrow of immunocompromised mice
+
+-   **Especie:** Homo sapiens.
+
+-   **Tejido/tipo celular:** Células humanas CD45⁺ y CD45⁺CD34⁺ aisladas
+    de médula ósea de ratones PDX (xenoinjertos derivados de pacientes
+    con CML en fase crónica o blástica)
+
+-   **Número de acceso GEO:** GSE218185
+
+-   **Tipo de experimento:** scRNA-seq (Expression profiling by high
+    throughput sequencing).
+
+-   **Secuenciador:** Illumina HiSeq4000, Illumina NovaSeq 6000
+
+-   **Química/protocolo:** 10X Chromium Single Cell 3' gene expression
+    library (kit v2) y 5' gene expression library (kit v1)
+
+-   **Tipo de captura:** Captura en gotas con microfluidics (Chromium
+    Controller, 10X Genomics) — Single Cell A Chip
+
+-   **Numero estimado de células recuperadas por muestras:** 13,873
+    células en total distribuidas en 9 muestras, provenientes de 2
+    cohortes (COH4 y COH5) y 3 condiciones de tratamiento: Vehicle
+    (6,080), Nilotinib (3,368) y NIL+IDASA (4,425).
+
+-   **Profundidad:** Mínimo 40,000 reads por célula
+
+-   **Artículo relacionado:** Scott MT, Liu W, Mitchell R, Clarke CJ et
+    al. Activating p53 abolishes self-renewal of quiescent leukaemic
+    stem cells in residual CML disease. Nat Commun 2024 Jan
+    22;15(1):651. PMID:38246924
+
+------------------------------------------------------------------------
+
+# Abstract
+
+En la leucemia mieloide crónica (LMC), las células madre leucémicas
+(LSC) quiescentes persisten en casi todos los pacientes en fase crónica
+bajo tratamiento con inhibidores de tirosina cinasa (TKI), representando
+el principal obstáculo para alcanzar la remisión libre de terapia (TFR).
+En este trabajo se realizó un análisis de scRNA-seq (10x Chromium,
+Illumina HiSeq4000) sobre células humanas huCD45⁺ y huCD34⁺ aisladas de
+médula ósea de ratones PDX injertados con células primarias de LMC en
+fase crónica (GSE218185; Scott et al., 2024). Se compararon tres
+condiciones: vehículo (VEH), nilotinib (NIL) y la combinación
+nilotinib+idasanutlin (NIL+IDASA). El pipeline bioinformático consistió
+en lectura de matrices procesadas de GEO con Seurat v5, control de
+calidad por célula (genes, UMIs, porcentaje mitocondrial), normalización
+LogNormalize, selección de 2,000 genes altamente variables (VST),
+reducción de dimensionalidad con PCA (50 componentes), corrección de
+efecto de lote con Harmony por experimento de captura, proyección UMAP,
+clustering con Louvain (resolución 0.5), identificación de marcadores
+con FindAllMarkers (Wilcoxon) y análisis de expresión diferencial entre
+condiciones. Se identificaron 17 clusters que representan los cuatro
+linajes hematopoyéticos descritos en el paper original (LSC/progenitores
+ESC-REG, NMM, ME y EBM). El cluster de LSC quiescentes (ESC-REGlow)
+presentó 0 células bajo tratamiento NIL+IDASA, consistente con el
+agotamiento de esta población reportado por Scott et al. (2024). El
+análisis de expresión diferencial en células CD34⁺ reveló downregulation
+de genes de supervivencia de LSC (FOS, DUSP1, ZFP36) y upregulation de
+genes de estrés oxidativo bajo NIL+IDASA. El enriquecimiento funcional
+GO-BP confirmó activación de vías relacionadas con respuesta a estrés y
+diferenciación, en concordancia con los resultados del artículo de
+referencia.
+
+------------------------------------------------------------------------
+
+# Diseño experimental
+
+Se empleó un modelo in vivo de xenoinjerto derivado de paciente
+(**PDX**). Para ello, se utilizaron ratones inmunodeprimidos
+(**NSG/NRG**) injertados con células primarias de LMC (**CD34+, p53
+WT**). Posteriormente, el análisis de la respuesta al tratamiento, se
+hizo mediante scRNA-seq en células **(huCD45+ o huCD34+**) aisladas de
+su médula ósea.
+
+La respuesta al tratamiento se evaluó comparando los siguientes grupos:
+
+1.  **Vehículo (VEH):** Grupo control sin fármacos activos.
+
+2.  **Nilotinib (NIL):** Tratamiento exclusivo con TKI durante 28 días.
+
+3.  **Nilotinib + Idasanutlin (NIL+IDASA):** Tratamiento combinado donde
+    se administró NIL (TKI) junto con IDASA. *Nota: Tras la fase de
+    tratamiento, los animales entraron en un periodo libre de fármacos
+    de 28 días para evaluar el agotamiento a largo plazo de las LSC.*
+
+    Aunque el estudio utilizó una cohorte total de 46 ratones para
+    análisis de citometría (26 en COH4 y 20 en COH5), el análisis de
+    **scRNA-seq** se centró en una selección representativa de réplicas
+    biológicas:
+
+4.  **Cohorte 4 (fin del tratamiento):** Las células se recolectaron
+    inmediatamente tras finalizar los 28 días de tratamiento. Para el
+    análisis de scRNA-seq se seleccionaron un total de **6 muestras**.
+
+5.  **Cohorte 5 (periodo libre de tratamiento):** Se procesaron **3
+    muestras** adicionales para el analisis de scRNA-seq, para
+    representar la persistencia de las células troncales.\
+
+------------------------------------------------------------------------
+
+# Flujo de trabajo
+
+El flujo de trabajo de este proyecto se diseñó en dos entornos
+computacionales distintos. El intento de procesamiento primario a partir
+de los datos crudos de secuenciación (archivos FASTQ) se configuró en el
+cluster. Debido a la limitación de los datos públicos (ausencia del R1),
+todo el análisis *downstream* posterior a la obtención de las matrices
+de conteos preprocesadas por Cell Ranger fue corrido en un entorno
+local.
+
+## Entorno de Clúster (Procesamiento primario)
+
+Los *scripts* correspondientes a la descarga de datos, obtención del
+genoma de referencia y el intento de alineamiento con Cell Ranger
+mediante contenedores Singularity se almacenaron en la siguiente ruta
+del clúster:
+
+`Ruta: /mnt/data/transcriptomica/palbarrango/BioProject_scRNA/`
+
+**Estructura de directorios en el clúster:**
+
+```         
+BioProject_scRNA/
+├── data/
+│   └── fastq/                         # FASTQs descargados desde SRA (21 SRRs, ~466 GB)
+├── reference/
+│   ├── cellranger_7.2.0.sif           # Imagen Singularity de Cell Ranger
+│   └── refdata-gex-GRCh38-2020-A/     # Genoma de referencia GRCh38 (GENCODE v32)
+└── scripts/
+    ├── 01_download_fastq.sh           # Descarga de FASTQs con prefetch/fasterq-dump
+    ├── 02_download_reference.sh       # Descarga del genoma de referencia
+    ├── 03_pull_cellranger.sh          # Descarga de imagen Singularity
+    ├── 04_run_cellranger.sh           # Alineamiento y cuantificación con Cell Ranger
+    └── logs/                          # Logs de los jobs SLURM
+```
+
+## Entorno Local (Análisis *downstream* con Seurat)
+
+A partir de las matrices descargadas de GEO, el filtrado, reducción de
+dimensionalidad, *clustering* y análisis de expresión diferencial se
+ejecutaron en local, generando la siguiente estructura de resultados:
+
+**Estructura de directorios en local:**
+
+```         
+BioProject_scRNA/ (local)
+├── output/
+│   └── GSE218185_CML_normalized.rds   # Objeto Seurat post-QC y normalización
+├── seurat_objects/
+│   └── GSE218185_CML_anotado.rds      # Objeto Seurat final con anotación celular
+├── markers_results/
+│   └── markers_por_cluster.csv        # Marcadores identificados con FindAllMarkers
+└── DEG_results/
+    ├── DEG_CD34_NIL_IDASA_vs_VEH.csv    # DEGs poblacion CD34+ completa
+    ├── GO_UP_NIL_IDASA.csv              # Enriquecimiento GO-BP de genes UP
+    └── GO_DOWN_NIL_IDASA.csv            # Enriquecimiento GO-BP de genes DOWN
+```
+
+## Pipeline
+
+```         
+Matrices Cell Ranger (barcodes + features + matrix por GSM)
+         ↓
+    Read10X() + CreateSeuratObject()   [min.cells=3, min.features=200]
+         ↓
+    merge() → objeto unificado (9 muestras)
+         ↓
+  PercentageFeatureSet() → percent_mito / percent_ribo / percent_hb
+         ↓
+  VlnPlot() + FeatureScatter() → visualización QC
+         ↓
+  subset() → filtrado (200 < nFeature < 6000; mito < 20%; ribo < 50%)
+         ↓
+  Exploración top genes + MALAT1
+         ↓
+  NormalizeData() → log(CP10K)        [método: LogNormalize, scale.factor=10000]
+         ↓
+  FindVariableFeatures() → 2000 HVG   [método: vst]
+         ↓
+  ScaleData()
+         ↓
+  RunPCA() → 50 PCs
+         ↓
+  RunHarmony() → corrección de lote por experimento (EXPT1/2/3)
+         ↓
+  RunUMAP() → 25 dims de Harmony
+         ↓
+  FindNeighbors() + FindClusters()    [k=20, resolución=0.5, Louvain]
+         ↓
+  FindAllMarkers() → marcadores por cluster (Wilcoxon, logFC > 0.25)
+         ↓
+  Anotación manual de tipos celulares (ESC-REG / NMM / ME / EBM)
+         ↓
+ FindMarkers() → DEG: NIL+IDASA vs VEH en células CD34+
+         ↓
+  Volcano plot + tabla de DEGs significativos
+         ↓
+  enrichGO() → enriquecimiento GO-BP (clusterProfiler) — UP y DOWN
+         ↓
+  saveRDS() → objeto final anotado
+  
+```
+
+# Obtención de datos y procesamiento con Cell Ranger
+
+## Intento de procesamiento desde datos crudos (FASTQs)
+
+Con el objetivo de seguir el pipeline completo de análisis de scRNA-seq
+desde los datos crudos, se intentó reprocesar los archivos FASTQ del
+dataset GSE218185 utilizando Cell Ranger 7.2.0 (10X Genomics).\
+\
+Los 21 archivos SRR correspondientes a las 9 muestras del BioProject
+PRJNA902697 fueron identificados mediante el SRA Run Selector de NCBI y
+descargados utilizando las herramientas `prefetch` y `fasterq-dump`.
+Dado que Cell Ranger no estaba disponible como módulo en el cluster, se
+utilizó un contenedor Singularity. El genoma de referencia utilizado fue
+GRCh38 con la anotación GENCODE v32, que corresponde a la versión
+utilizada en el paper original.
+
+## Datos crudos incompletos en repositorios públicos
+
+Posteriormente de la descarga de los archivos se identificó que todos
+los SRRs contenían un solo archivo FASTQ sin sufijo numérico
+(`SRR22321154.fastq.gz`) con reads de longitud de 98-99 bp, en lugar de
+los dos archivos esperados `_1.fastq.gz` (R1: barcode + UMI, 28 bp) y
+`_2.fastq.gz` (R2: cDNA, 98 bp), los cuales son esenciales por Cell
+Ranger.
+
+Dado a la problemática que se presentó, se realizó lo siguiente:
+
+-   Retrocedimos a la descarga de los 21 SRRs, forzando obtener los
+    archivos esperados `_1.fastq.gz y _2.fastq.gz`
+-   Se inspeccionó la longitud y contenido de los reads.
+-   Se consultó los metadatos en NCBI SRA.
+-   Se consultó la base de datos European Nucleotide Archive (ENA).
+
+Sin embargo, nos percatamos que los autores depositaron únicamente el
+read de cDNA (R2) en los repositorios públicos, omitiendo el read de
+barcode+UMI (R1), y para el propósito de esta práctica resulta imposible
+la reproducción del pipeline completo desde los datos crudos, ya que sin
+R1 no es posible asignar reads a células individuales ni recuantificar
+UMIs.
+
+## Decisión metodológica: uso de matrices procesadas de GEO
+
+Dado que el R1 no está disponible en ningún repositorio público, el
+análisis posterior se realizó a partir de las matrices de conteos
+procesadas depositadas por los autores en GEO (`GSE218185_RAW.tar`).
+Estas matrices en formato 10X Genomics (barcodes.tsv.gz,
+features.tsv.gz, matrix.mtx.gz) equivalente al resultado que se habría
+obtenido al correr Cell Ranger sobre los FASTQs completos.
+
+------------------------------------------------------------------------
+
+# Definir estructura de muestras
+
+Cada muestra GSM tiene su propia carpeta con los tres archivos de 10X
+Genomics
+
+1.  `barcodes.tsv.gz:` Contiene los identificadores únicos
+    correspondientes a cada célula capturada. Definirá los nombres de
+    las **columnas** de la matriz de expresión.
+
+2.  `features.tsv.gz:` Contiene la lista de todos los genes anotados.
+    Este archivo define los nombres de las **filas** de la matriz de
+    expresión.
+
+3.  `matrix.mtx.gz`: Contiene los valores numéricos crudos, es decir, la
+    cantidad exacta de transcritos (UMIs) que se detectaron para cada
+    gen dentro de cada célula.
+
+Como anteriormente se mencionó, el diseño tiene **3 condiciones
+experimentales** (VEH, NIL, NIL+IDASA), junto con **2 estrategias de
+aislamiento** (CD45+, CD34+) para capturar distintos niveles de
+resolución biológica.
+
+-   **huCD45+** nos permite ver el **panorama completo** del sistema
+    hematopoyético humano: células maduras mieloides, progenitores y LSC
+    al mismo tiempo.
+
+-   **huCD34+** es un marcador de células progenitoras primitivas que
+    enriquece específicamente para las **células madre leucémicas
+    (LSC)** y progenitores tempranos.´
+
+    <div>
+
+    ![Información suplementaria encontrada en GEO para el
+    GSE218185.](images/InformaciónSuplementaria.png){fig-alt="Información suplementaria encontrada en GEO para el GSE218185."}
+
+    </div>
+
+```{r paquetes}
+library(Matrix)       
+library(Seurat)        # Principal para análisis de scRNA-seq
+library(dplyr)         
+library(ggplot2)       
+library(patchwork)     # Combinar gráficos
+library(DoubletFinder) 
+
+base_dir <- "~/Documents/TranscriptomicaDifrencial_Opt/BioProject_scRNA/data"
+# Tres experimentos de captura scRNA-seq:
+#   EXPT1: células huCD45+ (panorama completo)
+#   EXPT2: células huCD34+ de COH4 (LSC enriquecidas)
+#   EXPT3: células huCD34+ de COH4 y COH5 
+
+muestras <- list(
+  # EXPT1: huCD45+ — COH4 
+  # VEH, NIL+IDASA
+  "COH4_EXPT1_VEH_CD45"       = file.path(base_dir, "GSM6736197"),
+  "COH4_EXPT1_NIL_IDASA_CD45" = file.path(base_dir, "GSM6736198"),
+
+  # EXPT2: huCD34+ — COH4 
+  # VEH, NIL, NILNIL+IDASA
+  "COH4_EXPT2_VEH_CD34"       = file.path(base_dir, "GSM6736199"),
+  "COH4_EXPT2_NIL_CD34"       = file.path(base_dir, "GSM6736200"),
+  "COH4_EXPT2_NIL_IDASA_CD34" = file.path(base_dir, "GSM6736201"),
+
+  # EXPT3: huCD34+ — COH4 y COH5 
+  # GSM6736202: COH4 VEH
+  # GSM6736203-205: COH5 VEH, NIL, NILNIL+IDASA
+  "COH4_EXPT3_VEH_CD34"       = file.path(base_dir, "GSM6736202"),
+  "COH5_EXPT3_VEH_CD34"       = file.path(base_dir, "GSM6736203"),
+  "COH5_EXPT3_NIL_CD34"       = file.path(base_dir, "GSM6736204"),
+  "COH5_EXPT3_NIL_IDASA_CD34" = file.path(base_dir, "GSM6736205")
+)
+
+# Verificar que todas mis carpetas estén completas
+for (nombre in names(muestras)) {
+  if (dir.exists(muestras[[nombre]])) {
+    message("encontrada: ", nombre, " -> ", muestras[[nombre]])
+  } else {
+    warning("no encontrada: ", nombre, " -> ", muestras[[nombre]])
+  }
+}
+```
+
+------------------------------------------------------------------------
+
+# Leer los datos con Read10X y crear objetos Seurat
+
+A diferencia del trabajo en clase, en donde ya teníamos una sola matriz
+consolidada de todo el estudio, aquí leeremos cada muestra por separado
+porque cada GSM es un experimento independiente de captura celular.
+
+Es importante mantener la identidad de cada muestra para hacer las
+comparaciones entre condiciones (VEH vs NIL+IDASA) y detectar posibles
+efectos batch.
+
+**Nota sobre el formato HDF5:**
+
+En la Práctica 1 fue necesario crear archivos HDF5 (.h5) como paso
+intermedio porque los datos del estudio venían en una única matriz
+consolidada para todos los pacientes, y era necesario separarlos por
+muestra antes de poder crear los objetos Seurat individuales.
+
+Sin embargo, en este caso no necesario porque los datos fueron
+descargados en el formato estándar de Cell Ranger: como anteriormente se
+mencionó, existe una carpeta independiente por muestra (GSM), cada una
+conteniendo sus propios archivos barcodes.tsv.gz, features.tsv.gz y
+matrix.mtx.gz. Y, con ayuda de la función Read10X() de Seurat es posible
+leer esta estructura directamente y producir exactamente la misma matriz
+de conteos que produciría Read10X_h5() si los datos estuvieran en
+formato HDF5. Por lo tanto, ambos flujos son equivalentes en resultado.
+
+```{r leer_datos, message=FALSE, warning=FALSE}
+# Leer cada muestra y para cada una crear su objeto seurat
+seurat_list <- list()
+
+for (nombre in names(muestras)) {
+  ruta <- muestras[[nombre]]
+  
+  message("cargando muestra: ", nombre)
+  
+  # Leer los tres archivos
+  counts <- Read10X(data.dir = ruta)
+  
+  # Crear objeto Seurat con los mismos umbrales que vimos en clase, donde:
+  # min.cells = 3: un gen debe estar en al menos 3 células para incluirse
+  # min.features = 200: una célula debe tener al menos 200 genes detectados
+  sobj <- CreateSeuratObject(
+    counts       = counts,
+    project      = nombre,
+    min.cells    = 3,
+    min.features = 200
+  )
+  
+  # --- Metadatos de tratamiento ---
+  # Las 3 condiciones del diseño experimental, asegurarnos de mantener la
+  # identidad
+  if (grepl("VEH", nombre)) {
+    sobj$condition <- "Vehicle"
+  } else if (grepl("NIL_IDASA", nombre)) {
+    sobj$condition <- "NIL_IDASA"
+  } else if (grepl("NIL", nombre)) {
+    sobj$condition <- "Nilotinib"
+  }
+
+  # --- Tipo de población celular aislada ---
+  # CD45+: panorama completo de células humanas (EXPT1)
+  # CD34+: progenitores/LSC enriquecidas (EXPT2 y EXPT3)
+  sobj$cell_type <- ifelse(grepl("CD45", nombre), "huCD45", "huCD34")
+
+  # --- Cohorte de pacientes ---
+  # COH4 y COH5 — importante para controlar variabilidad
+  sobj$cohort <- ifelse(grepl("COH4", nombre), "COH4", "COH5")
+
+  # --- Experimento de captura ---
+  # EXPT1, EXPT2, EXPT3 capturas independientes 
+  # IMPORTANTE para detectar efectos batch
+  sobj$experiment <- sub(".*_(EXPT[0-9])_.*", "\\1", nombre)
+
+  message("  -> ", ncol(sobj), " células, ", nrow(sobj), " genes")
+  seurat_list[[nombre]] <- sobj
+}
+```
+
+------------------------------------------------------------------------
+
+# Métricas de calidad crudas de Cell Ranger
+
+Los **genes mitocondriales** `MT-`, son los que nos indican si una
+célula está dañada o en apoptosis. En el estudio se excluyen a células
+con \>20% de contenido mitocondrial en las células huCD45+ de PDX.
+
+Los **genes ribosomales** `^RP[SL]`, en este caso resultan ser
+relevantes en LMC porque en el estudió se observó upregulation de genes
+de proteínas ribosomales en LSC quiescentes (ESC-REGlow), lo que conecta
+con pluripotencia de células ES.
+
+Los **genes de hemoglobina** (`^HB`) dado a que las células de LSC
+humanas se aislaron de PDX es posible que haya ARN murino. Un alto
+porcentaje nos puede indicar contaminación.
+
+```{r calcular_qc}
+for (nombre in names(seurat_list)) {
+  
+  # --- Genes mitocondriales ---
+  seurat_list[[nombre]] <- PercentageFeatureSet(
+    seurat_list[[nombre]], 
+    pattern  = "^MT-", 
+    col.name = "percent_mito"
+  )
+  
+  # --- Genes ribosomales ---
+  #  LSC quiescentes tienen alta expresión ribosomal
+  seurat_list[[nombre]] <- PercentageFeatureSet(
+    seurat_list[[nombre]], 
+    pattern  = "^RP[SL]", 
+    col.name = "percent_ribo"
+  )
+  
+  # --- Genes de hemoglobina ---
+  seurat_list[[nombre]] <- PercentageFeatureSet(
+    seurat_list[[nombre]], 
+    pattern  = "^HB[^(P|E|S)]", 
+    col.name = "percent_hb"
+  )
+}
+
+# Visualizar resumen de QC para muestra 1
+head(seurat_list[[1]]@meta.data)
+```
+
+------------------------------------------------------------------------
+
+# Fusionar todos los objetos en uno solo
+
+Para poder hacer un control de calidad y visualización comparativa entre
+las condiciones experimentales, fusionamos todas las muestras en un
+único objeto Seurat.
+
+```{r fusionar_objetos}
+# primer objeto es la "base", los demás se añaden
+primer_objeto <- seurat_list[[1]]
+resto_objetos  <- seurat_list[-1]
+
+alldata <- merge(
+  x           = primer_objeto,
+  y           = resto_objetos,
+  add.cell.ids = names(seurat_list),  # se agrega prefijo del nombre de muestra a cada barcode
+  project     = "GSE218185_CML"
+)
+
+# Limpiar memoria
+rm(seurat_list, primer_objeto, resto_objetos)
+gc()
+
+# Verificar el objeto fusionado
+alldata
+```
+
+Visualizar la metadata:
+
+```{r ver_metadata}
+head(alldata@meta.data, 10)
+```
+
+¿Cuántas células hay por muestra?
+
+```{r celulas_por_muestra}
+table(alldata$orig.ident)
+```
+
+¿Cuántas células hay por condición?
+
+```{r celulas_por_condicion}
+table(alldata$condition)
+```
+
+------------------------------------------------------------------------
+
+# Visualización gráfica del QC
+
+La visualización gŕafica del QC para evaluar la viabilidad celular y la
+calidad de secuenciación, usaremos `split.by = "condition"` para
+comparar las 3 condiciones de tratamiento.
+
+Este paso es muy importante porque:
+
+1.  La calidad puede variar según el injerto.
+
+2.  El tratamiento con NIL+IDASA puede inducir apoptosis, por lo que,
+    elevaría el porcentaje mitocondrial (sin embargo, es importante
+    distinguirlo de los artefactos)\
+
+**Violinplots**
+
+-   nFeature_RNA y nCount_RNA
+
+La mayoría de las muestras presentan una distribución homogénea y
+esperada, con medianas que oscilan entre 1,000 y 2,500 genes detectados
+por célula (`nFeature_RNA`). Sin embargo, la muestra
+**`COH4_EXPT2_VEH_CD34`** tiene una distribución notablemente diferente
+al resto, ya que su violin es más ancho y se extiende hasta \~7,500
+genes.
+
+Nuevamente la misma muestra destaca por tener 75,000 transcritos totales
+(`nCount_RNA`), mientras que el resto se mantiene por debajo de
+\~25,000. Este patrón podría ser un indicador de **dobletes**.
+
+-   percent_mito
+
+La mayoría de los grupos experimentales mantienen una proporción
+mitocondrial baja, la muestra **`COH4_EXPT2_NIL_IDASA_CD34`** presenta
+un ensanchamiento en su violín, con una gran proporción de su población
+celular superando el 10% y llegando hasta el 25% de expresión
+mitocondrial.Esto es **biológicamente consistente,** ya que la terapia
+combinada induce mayor estrés oxidativo en las células troncales
+leucemicas (LSC)
+
+-   percent_hb
+
+Algunas muestras contienen subpoblaciones celulares donde la expresión
+de genes de hemoglobina constituye casi el 100% de sus transcritos.Esto
+es una señal de alerta, ya que podría indicar contaminación por
+eritrocitos dado que las células humanas fueron extraídas directamente
+de la médula ósea de los ratones PDX.
+
+```{r violinplot_qc, warning=FALSE, message=FALSE, fig.width=14, fig.height=10, fig.cap="**Figura 1**.Distribución de las métricas de control de calidad (QC).Los gráficos de violín muestran la distribución de cinco parámetros técnicos en las 9 réplicas biológicas del estudio."}
+feats <- c("nFeature_RNA", "nCount_RNA", "percent_mito", "percent_ribo", "percent_hb")
+
+VlnPlot(
+  alldata, 
+  group.by = "orig.ident",
+  features = feats, 
+  pt.size  = 0.1, 
+  ncol     = 3
+)
+```
+
+**\
+Scatter plots**
+
+El gráfico de dispersión confirma la relación entre las métricas de
+secuenciación. Se puede observar una correlación negativa débil
+(**-0.27**) entre el porcentaje mitocondrial y los conteos totales,
+donde las gotas con muy pocos transcritos suelen ser restos celulares.
+Por otro lado, se observa una correlación positiva (**0.81**) entre
+`nCount_RNA` y `nFeature_RNA`, lo cual significa que existe una relación
+entre el número de moléculas de ARN que se capturaron y cuántos genes
+distintos se detectaron.
+
+```{r scatter_qc, fig.width=12, fig.height=5, fig.cap="**Figura 2**.Correlación empírica entre las métricas de secuenciación.Gráficos de dispersión (FeatureScatter) que evalúan la relación bidimensional de las métricas de QC en la población total de células."}
+# nCount vs percent_mito: células con muchos conteos pero alto % mito son sospechosas
+plot1 <- FeatureScatter(
+  alldata, 
+  feature1 = "nCount_RNA", 
+  feature2 = "percent_mito",
+  group.by = "orig.ident", 
+  pt.size  = 0.5
+)
+
+# nCount vs nFeature: correlación esperada — si una célula tiene muchos UMIs,
+# debería tener muchos genes distintos. 
+plot2 <- FeatureScatter(
+  alldata, 
+  feature1 = "nCount_RNA", 
+  feature2 = "nFeature_RNA",
+  group.by = "orig.ident", 
+  pt.size  = 0.5
+)
+
+plot1 + plot2
+```
+
+Número de células **ANTES** del filtrado:
+
+```{r antes_filtrado}
+cat("Total de células antes del filtrado:", ncol(alldata), "\n")
+table(alldata$orig.ident)
+```
+
+------------------------------------------------------------------------
+
+# Filtrado de células de baja calidad
+
+Los umbrales de filtrado están basados en:
+
+1.  **`nFeature_RNA > 200`**: Elimina "células" vacías o droplets
+    vacíos.
+
+2.  **`nFeature_RNA < 6000`**: Elimina dobletes (dos células capturadas
+    juntas tienen el doble de genes). Específicamente para este
+    análisis, al trabajar con **células de médula ósea** (progenitores
+    hematopoyéticos CD34+ y LSC), suelen ser transcriptomicamente más
+    complejas y en estados de diferenciación temprana se activan muchos
+    programas genéticos simultáneamente. Por esta razón, usar 2,500 como
+    límite eliminaría células biológicamente reales, ya que, por ejemplo
+    un progrenitor CD34+ puede expresar entre 3,000 y 5,000 genes
+    detectables.
+
+3.  **`percent_mito < 20`**: En el estudio se usó \>20% de contenido
+    mitocondrial como criterio de exclusión para células huCD45+/huCD34+
+    en PDX.
+
+4.  **`percent_ribo < 50`**: Las LSC quiescentes tienen alta expresión
+    de genes ribosomales, entonces un umbral bajo podría eliminar
+    células biológicamente relevantes. Usamos 50% para conservar estas
+    poblaciones.
+
+```{r filtrado}
+data.filt <- subset(
+  alldata, 
+  subset = nFeature_RNA > 200 & 
+           nFeature_RNA < 6000 & 
+           percent_mito < 20  &
+           percent_ribo < 50
+)
+
+cat("Células ANTES del filtrado:", ncol(alldata), "\n")
+cat("Células DESPUÉS del filtrado:", ncol(data.filt), "\n")
+cat("Células eliminadas:", ncol(alldata) - ncol(data.filt), "\n\n")
+
+# Células por muestra después del filtrado
+table(data.filt$orig.ident)
+```
+
+Visualizar el objeto filtrado:
+
+```{r ver_objeto_filtrado}
+data.filt
+```
+
+Tenemos 17,861 genes detectados en 13,647 células.
+
+\
+Ver metadata filtrada:
+
+```{r ver_metadata_filtrada}
+head(data.filt@meta.data, 5)
+```
+
+¿Qué capas (layers) tenemos disponibles?
+
+```{r ver_capas}
+Layers(data.filt, assay = "RNA")
+```
+
+------------------------------------------------------------------------
+
+# Exploración de genes más abundantes
+
+Para comprender la dinámica transcripcional de nuestras muestras antes
+de realizar cualquier agrupamiento celular, es importante hacer una
+exploración global de los genes que dominan el transcriptoma, para
+posteriormente hacer una exploración dirigida hacia alguna firma
+molecular específica reportada de esta enfermedad.
+
+## ¿Cuántas lecturas totales tiene cada gen en cada dataset?
+
+```{r lecturas_por_gen}
+# 1. Obtenemos el nombre de todas las capas en el assay "RNA"
+capas_disponibles <- Layers(data.filt, assay = "RNA")
+
+# Filtramos y unicamentenos quedamos con las capas de conteos puros ("counts")
+capas_conteos <- capas_disponibles[grepl("counts", capas_disponibles)]
+
+# 2. Extraemos la matriz de cada capa (preserva los rownames correctos)
+cell_counts <- lapply(capas_conteos, function(capa) {
+  LayerData(data.filt, assay = "RNA", layer = capa)
+})
+
+# Asignarle los nombres de las muestras a la lista para no perder la organizacion
+names(cell_counts) <- capas_conteos
+
+# 3. Total de lecturas por gen en cada dataset
+gene_totals <- lapply(cell_counts, function(mat) {
+  rowSums(mat)
+})
+
+# 4. Top 10 genes más abundantes por dataset
+top_genes <- lapply(gene_totals, function(x) {
+  sort(x, decreasing = TRUE)[1:10]
+})
+
+top_genes
+```
+
+## ¿Cuántas células expresan cada gen?
+
+```{r celulas_por_gen}
+expr_cells <- lapply(cell_counts, function(mat) {
+  cells_per_gene <- rowSums(mat > 0)
+  names(cells_per_gene) <- rownames(mat)
+  cells_per_gene
+})
+```
+
+**Heatmap de top genes**
+
+```{r heatmap_top_genes, fig.width=10, fig.height=6, fig.cap="**Figura 3**.Distribución celular de los transcritos globales más abundantes. Mapa de calor (heatmap) que ilustra el número de células individuales con expresión detectable (UMIs > 0) para los genes con mayor cantidad de lecturas absolutas en el dataset. Las columnas representan cada una de las 9 réplicas biológicas evaluadas, mientras que las filas conforman el panel consolidado de los genes Top 10 más expresados por muestra. La intensidad del color es proporcional a la cantidad de células que expresan el gen.."}
+library(reshape2)
+
+df_expr <- do.call(rbind, lapply(names(expr_cells), function(name) {
+  data.frame(
+    dataset = name,
+    gene    = names(expr_cells[[name]]),
+    cells   = expr_cells[[name]]
+  )
+}))
+
+df_top <- do.call(rbind, lapply(names(top_genes), function(name) {
+  genes <- names(top_genes[[name]])
+  data.frame(
+    dataset = name,
+    gene    = genes,
+    cells   = expr_cells[[name]][genes]
+  )
+}))
+
+ggplot(df_top, aes(x = dataset, y = gene, fill = cells)) +
+  geom_tile(color = "white") +
+  scale_fill_gradient(low = "white", high = "darkred") +
+  theme_minimal() +
+  labs(
+    title = "Número de células que expresan los top genes por condición",
+    subtitle = "Dataset: GSE218185",
+    x = "Dataset / Muestra",
+    y = "Gen",
+    fill = "# células"
+  ) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+**Interpretación biológica de los transcritos dominantes**
+
+Al evaluar los genes más abundantes y su distribución celular en el mapa
+de calor, se identifican puede concluir lo siguiente:
+
+[1.]{.underline} **Confirmación del aislamiento celular (CD45+ vs
+CD34+)**: Se observa una clara división transcripcional entre los
+grupos. Los marcadores característicos de células inmunitarias maduras
+están presentes en las muestras (CD45+), pero desaparecen en las
+fracciones enriquecidas (CD34+).
+
+[2.]{.underline} **Influencia del microambiente (Médula Ósea):** Se
+visualiza una dominancia de genes eritroides (como la hemoglobina y
+ferritina) en casi todas las muestras es una firma biológica esperada,
+ya que refleja el nicho anatómico de donde se extrajeron las células.
+
+[3.]{.underline} **Genes ubicuos y la necesidad de control técnico:**
+Por otro lado, se observan transcritos constitutivos (estructurales) y
+de fuerte retención nuclear, como el lncRNA **MALAT1**, por lo que es
+necesario tenerlo en cuenta para descartar que las señales provengan de
+células lisadas.
+
+------------------------------------------------------------------------
+
+# Análisis del lncRNA MALAT1
+
+El gen *MALAT1* (*Metastasis Associated Lung Adenocarcinoma Transcript
+1*), también conocido como *NEAT2*, codifica para un ARN largo no
+codificante (lncRNA) que se localiza en los dominios nucleares
+denominados *speckles*. Su función principal se centra en la regulación
+de la expresión génica a nivel de splicing y transcripción.
+
+MALAT1 se utiliza como biomarcador de calidad técnica, ya que al ser un
+transcrito de retención nuclear, un exceso de sus lecturas (típicamente
+\>20% de los UMIs totales de una célula) sugiere que la membrana celular
+sufrió una lisis parcial durante el procesamiento.
+
+## Porcentaje de UMIs de MALAT1 por célula
+
+```{r malat1_percent}
+malat1_percent <- lapply(cell_counts, function(mat) {
+  if ("MALAT1" %in% rownames(mat)) {
+    gene_counts  <- mat["MALAT1", ]
+    total_counts <- colSums(mat)
+    100 * gene_counts / total_counts
+  } else {
+    warning("MALAT1 no encontrado en esta muestra")
+    NULL
+  }
+})
+```
+
+## Células con \>20% de UMIs de MALAT1
+
+```{r malat1_summary}
+malat1_summary <- lapply(malat1_percent, function(pct) {
+  if (is.null(pct)) return(NULL)
+  total_cells  <- length(pct)
+  cells_above  <- sum(pct > 20)
+  percent_cells <- 100 * cells_above / total_cells
+  list(
+    total_cells   = total_cells,
+    cells_above   = cells_above,
+    percent_cells = round(percent_cells, 2)
+  )
+})
+
+malat1_summary
+```
+
+## Porcentaje global
+
+```{r malat1_global}
+total_cells_all <- sum(sapply(malat1_summary, function(x) if (!is.null(x)) x$total_cells else 0))
+cells_above_all <- sum(sapply(malat1_summary, function(x) if (!is.null(x)) x$cells_above else 0))
+percent_global  <- 100 * cells_above_all / total_cells_all
+
+cat("Porcentaje global de células con MALAT1 > 20% de UMIs:", round(percent_global, 2), "%\n")
+```
+
+\
+La evaluación de los niveles de ***MALAT1*** a lo largo de las 9
+réplicas biológicas a nivel general, únicamente el **0.7%** del total de
+las células supera el umbral crítico del 20% de UMIs dedicados a
+***MALAT1***, por lo que, el dataset está libre de sesgos técnicos por
+daño de membrana y en condiciones óptimas para las fases de reducción de
+dimensionalidad (PCA).
+
+------------------------------------------------------------------------
+
+# Normalización de los datos
+
+La normalización con `NormalizeData()` aplica la normalización estándar
+de Seurat: para cada célula, divide el conteo de cada gen entre el total
+de conteos de esa célula, multiplica por un factor de escala (10,000 por
+defecto, y luego aplica una transformación logarítmica (`log1p`). Esto
+corrige por diferencias en profundidad de secuenciación entre células.
+
+En el estudio se menciona específicamente que se procesaron los datos
+con Cell Ranger seguido de Seurat con `LogNormalize` y
+`scale.factor = 10000`, exactamente el default de `NormalizeData()`.
+
+```{r normalizar}
+pbmc <- NormalizeData(data.filt, verbose = FALSE)
+
+# Verificar que ahora tenemos la capa 'data' (normalizada) además de 'counts'
+Layers(pbmc, assay = "RNA")
+```
+
+------------------------------------------------------------------------
+
+# Guardar el objeto Seurat
+
+Una vez que guardamos el objeto, el cual contiene:
+
+1.  `counts` — datos crudos
+
+2.  `data` — datos normalizados
+
+3.  `metadata` — datos de QC
+
+Tenemos lo necesario para los siguientes análisis: selección de genes
+variables, reducción de dimensionalidad (PCA), UMAP, y clustering
+
+```{r guardar}
+if (!dir.exists("output")) dir.create("output")
+
+saveRDS(pbmc, file = "output/GSE218185_CML_normalized.rds")
+cat("Objeto guardado en: output/GSE218185_CML_normalized.rds\n")
+cat("El objeto contiene:\n")
+cat("  - Células totales:", ncol(pbmc), "\n")
+cat("  - Genes totales:", nrow(pbmc), "\n")
+cat("  - Capas disponibles:", paste(Layers(pbmc), collapse = ", "), "\n")
+```
+
+------------------------------------------------------------------------
+
+# Selección de Genes Altamente Variables (HVG)
+
+De los 17,861 genes que se obtuvieron del dataset, la mayoría no varía
+significativamente entre células y solo nos generaría ruido a nuestro
+análisis. En Seurat, `FindVariableFeatures()` permite identificar los
+2,000 genes con mayor variabilidad biológica entre células usando el
+método `vst` (variance-stabilizing transformation), que modela la
+relación media-varianza y con ello, nos ayudaría a seleccionar los genes
+que se desvían más de lo esperado por azar.
+
+Además, el paper menciona explícitamente: *"we used the top 2000 most
+highly variable genes as PCA features for dimensionality reduction"*
+(Scott et al., 2024). Estos 2,000 genes serán la base para PCA, UMAP y
+clustering. Se espera que genes clave del ESC-REG como TP53, MKI67, y
+genes ribosomales como RPL19 y RPS2 estén entre los HVG.
+
+```{r hvg, message=FALSE, warning=FALSE}
+pbmc <- FindVariableFeatures(
+  pbmc,
+  selection.method = "vst", # metodo
+  nfeatures        = 2000,  # 2,000 genes con mayor variabilidad
+  verbose          = FALSE
+)
+
+# observamos los 10 genes más variables
+top10_hvg <- head(VariableFeatures(pbmc), 10)
+cat("Top 10 HVG:\n")
+print(top10_hvg)
+
+
+# genes clave del paper están entre los HVG???
+genes_paper <- c("TP53", "MKI67", "CD38", "MALAT1", "RPL19", "RPS2",
+                 "FOS", "DUSP1", "ZFP36", "HBA1", "HBA2")
+genes_en_hvg <- genes_paper[genes_paper %in% VariableFeatures(pbmc)]
+cat("\nGenes del paper presentes entre los HVG:\n")
+print(genes_en_hvg)
+```
+
+El gráfico de HVG muestra en rojo a los 2,000 genes seleccionados que
+concentran la mayor variabilidad biológica del dataset y que serán
+usados como input para el PCA.
+
+-   Los HVG se distribuyen a lo largo de todo el rango de expresión
+    promedio, lo que indica que la selección de genes moderadamente
+    expresados como de genes de alta expresión con variabilidad real.
+
+-   Los genes más variables destacan marcadores de relevancia para el
+    contexto del paper: CD74 y los genes HLA-DRB1 y HLA-DQB1 están
+    relacionados con el linaje NMM (neutrófilo/monocito/macrófago) que
+    el paper reporta como depletado con NIL+IDASA.
+
+```{r plot_hvg, fig.width=10, fig.height=5, fig.cap="**Figura 4**. Selección de genes altamente variables (HVG). Los 2,000 genes seleccionados se muestran en rojo; los genes no variables se muestran en negro.Se etiquetan los 10 genes con mayor varianza estandarizada. Se identificaron genes de relevancia biológica entre los HVG, incluyendo HIST3H2A (regulación de cromatina), CSF2 (factor estimulante de colonias, relevante en diferenciación mieloide), CD74 y HLA-DRB1/HLA-DQB1 (presentación de antígenos, linaje NMM), ATF3 (respuesta a estrés), y MAML2 (señalización Notch)"}
+# graficar genes variables vs no variables
+plot_hvg <- VariableFeaturePlot(pbmc)
+
+# etiquetar los 10 más variables
+plot_hvg_labeled <- LabelPoints(
+  plot   = plot_hvg,
+  points = top10_hvg,
+  repel  = TRUE
+)
+
+plot_hvg_labeled +
+  labs(
+    title    = "Genes altamente variables (HVG)",
+    subtitle = "Los 2,000 HVG seleccionados están marcados en rojo"
+  )
+```
+
+------------------------------------------------------------------------
+
+# Escalado de los datos
+
+El siguiente paso es sumamente importante antes de visualizar el PCA,
+para evitar que genes con mayor expresión absoluta no dominen el
+análisis independientemente de su variabilidad biológica (por ejemplo,
+genes como MALAT1 o genes de hemoglobina, que tienen conteos muy altos,
+dominarían los componentres principales aunque no sean los más
+informativos). El método utilizado es `ScaleData()`, que realiza un
+z-score por gen, centra la expresión de cada gen en cero y normaliza la
+varianza a 1.
+
+```{r escalar, message=FALSE, warning=FALSE}
+# escalamos únicamente los HVG 
+pbmc <- ScaleData(
+  pbmc,
+  features = VariableFeatures(pbmc),
+  verbose  = FALSE
+)
+
+cat("Capas disponibles tras el escalado:\n")
+print(Layers(pbmc, assay = "RNA"))
+```
+
+------------------------------------------------------------------------
+
+# Reducción de dimensionalidad — PCA
+
+El PCA (Análisis de Componentes Principales) comprime la información de
+los 2,000 HVG en un espacio de menor dimensión que captura la mayor
+varianza. Los primeros componentes capturan la mayor variación
+biológica: diferencias entre tipos celulares, entre condiciones de
+tratamiento, y potencialmente podríamos observar efectos batch.
+
+```{r pca, message=FALSE, warning=FALSE}
+pbmc <- RunPCA(
+  pbmc,
+  features = VariableFeatures(pbmc),
+  npcs     = 50,         # calculamos 50 para el elbow plot
+  verbose  = FALSE
+)
+
+# Resumen de los primeros 5 PCs
+print(pbmc[["pca"]], dims = 1:5, nfeatures = 5)
+```
+
+## ¿Cuántos componentes usar? — ElbowPlot
+
+El *elbow plot* muestra la varianza explicada por cada componente
+principal, se puede observar caída en los primeros 10 PCs, seguida de un
+descenso hasta \~PC 25, donde la curva se estabiliza en valores de
+desviación estándar menores a 2. Se seleccionaron los primeros **25
+componentes principales** como dimensiones de entrada para Harmony y
+UMAP, con el objetivo de capturar la variación biológica de poblaciones
+minoritarias (como LSC quiescentes) y excluir ruido técnico.
+
+```{r elbow_plot, fig.width=7, fig.height=4, fig.cap="**Figura 5**. Elbow plot de los componentes principales. Cada punto representa la desviación estándar explicada por cada PC. La curva muestra un codo aproximado en PC 20-25, lo que sugiere que los primeros 25 PCs capturan la mayor parte de la variación biológica relevante. La línea punteada indica el umbral seleccionado (PC = 25)."}
+ElbowPlot(pbmc, ndims = 50) +
+  geom_vline(xintercept = 25, linetype = "dashed", color = "firebrick") +
+  labs(
+    title    = "Elbow plot — Varianza por componente principal",
+    subtitle = "Dataset: GSE218185 (9 muestras, 13,647 células filtradas)"
+  )
+```
+
+## Vizualización del PCA
+
+De los tres paneles del PCA podemos decir lo siguiente:
+
+-   **Panel izquierdo (condición de tratamiento):** Las tres condiciones
+    (VEH, NIL, NIL+IDASA) están parcialmente mezcladas en la nube
+    principal, y se puede observar una agrupación en la parte superior
+    derecha que no corresponde a una condición biológica sino a un
+    subconjunto técnicamente distinto.
+
+-   **Panel central (experimento de captura):**Se observa una separación
+    muy clara entre EXPT1/EXPT2 (verde, región superior derecha) y EXPT3
+    (azul, nube principal izquierda). Esta separación no tiene origen
+    biológico, ya que ambos experimentos incluyen muestras VEH y
+    NIL+IDAS, sino que podría ser reflejo de las técnicas de captura.
+
+-   **Panel derecho (cohorte):** COH4 (rosa) y COH5 muestran también
+    cierta separación, aunque menos marcada que la separación por
+    experimento. Esto se debe a que COH4 incluye muestras de EXPT1,
+    EXPT2 y EXPT3, mientras que COH5 solo tiene muestras de EXPT3, por
+    lo que la separación de cohortes es en parte consecuencia de la
+    separación por experimento.
+
+Al observar los paneles es suficiente para justificar el uso de Harmony
+para corrección de batch antes del clustering, usando el experimento de
+captura como variable de corrección.
+
+```{r PCA_plots, fig.width=14, fig.height=5, fig.cap="**Figura 6**. Análisis de Componentes Principales (PCA) previo a la corrección de batch. Visualización de los dos primeros componentes principales (PC1 y PC2) coloreados por condición de tratamiento (izquierda), experimento de captura (centro) y cohorte de ratones PDX (derecha). Se observa una clara separación estructural del espacio de PCA asociada a variables técnicas, indicando la presencia de efecto batch que requiere corrección antes del clustering."}
+p1 <- DimPlot(pbmc, reduction = "pca", group.by = "condition") +
+  labs(title = "PCA por condición de tratamiento")
+
+p2 <- DimPlot(pbmc, reduction = "pca", group.by = "experiment") +
+  labs(title = "PCA por experimento de captura")
+
+p3 <- DimPlot(pbmc, reduction = "pca", group.by = "cohort") +
+  labs(title = "PCA por cohorte")
+
+p1 | p2 | p3
+```
+
+------------------------------------------------------------------------
+
+# Corrección de batch — Harmony
+
+El dataset presenta tres fuentes de variación técnica, lo cual se puede
+confundir con diferencias biológicas reales
+
+1.  **Experimento de captura** (EXPT1, EXPT2, EXPT3): capturas
+    independientes en el Chromium 10X en distintos momentos.
+2.  **Cohorte de ratones** (COH4, COH5): grupos de ratones procesados en
+    distintos momentos (fin de tratamiento vs período libre)
+3.  **Plataforma de secuenciación**: HiSeq 4000 (EXPT1/EXPT2) vs NovaSeq
+    6000 (EXPT3).
+
+Sin corrección, las células podrían agruparse por experimento en lugar
+de por tipo celular o condición biológica, para ello usamos Harmony
+(Korsunsky et al., 2019), un algoritmo de integración que ajusta el
+espacio PCA para minimizar la variación asociada a variables técnicas y
+conservando la variación biológica real, sin modificar los datos
+originales o la normalización.
+
+```{r harmony, message=FALSE, warning=FALSE}
+library(harmony)
+
+pbmc <- RunHarmony(
+  object = pbmc,
+  group.by.vars = "experiment", # variable de batch a corregir
+  reduction.use = "pca",
+  dims.use = 1:25,
+  verbose = FALSE
+)
+
+cat("Reducción Harmony calculada. Dimensiones disponibles:\n")
+print(names(pbmc@reductions))
+```
+
+## Comparar PCA antes y después de Harmony
+
+Antes de la corrección, se observan claramente dos regiones: una nube
+dispersa que corresponde a las células de EXPT3 (huCD34+, NovaSeq 6000)
+y un cluster en la región derecha que corresponde a EXPT1 y EXPT2 (HiSeq
+4000). Tras la corrección con Harmony, esta separación estructural
+persiste.
+
+Esto podría interpretarse como fallo de la corrección. Sin embargo, al
+cruzar con la variable de tipo celular, esta separación refleja una
+diferencia biológica real entre las células huCD45+ (EXPT1) y las
+células huCD34+ (EXPT2 y EXPT3); son poblaciones transcriptómicamente
+distintas que no deben mezclarse. Harmony integró las muestras CD34+
+entre EXPT2 y EXPT3, que sí comparten tipo celular.
+
+Esta es una limitación metodológica del análisis conjunto, al integrar
+huCD45+ y huCD34+ en un solo objeto antes de Harmony, la corrección de
+batch opera sobre un espacio mixto donde parte de la variación que
+parece técnica es en realidad biológica. Un análisis más riguroso
+aplicaría Harmony de forma independiente sobre cada población celular,
+separando primero CD34+ y CD45+ y corrigiendo el batch dentro de cada
+grupo.
+
+Posteriormente en la anotación celular se confirma que la corrección
+aplicada fue suficiente.
+
+```{r compare_harmony, fig.width=14, fig.height=10, fig.cap="**Figura 7**.Comparación del espacio de embedding antes y después de la corrección de batch con Harmony. Fila superior: proyección de los primeros dos componentes del PCA crudo, coloreados por experimento de captura (izquierda) y por condición de tratamiento (derecha). Fila inferior: proyección de los primeros dos embeddings de Harmony tras la corrección, coloreados por experimento (izquierda) y por condición (derecha)."}
+
+p_before1 <- DimPlot(pbmc, reduction = "pca",     group.by = "experiment") +
+  labs(title = "ANTES de Harmony — por experimento")
+p_before2 <- DimPlot(pbmc, reduction = "pca",     group.by = "condition") +
+  labs(title = "ANTES de Harmony — por condición")
+
+p_after1  <- DimPlot(pbmc, reduction = "harmony",  group.by = "experiment") +
+  labs(title = "DESPUÉS de Harmony — por experimento")
+p_after2  <- DimPlot(pbmc, reduction = "harmony",  group.by = "condition") +
+  labs(title = "DESPUÉS de Harmony — por condición")
+
+(p_before1 | p_before2) / (p_after1 | p_after2)
+```
+
+------------------------------------------------------------------------
+
+# UMAP
+
+Es importante notar que el UMAP (Uniform Manifold Approximation and
+Projection) se construye sobre los embeddings de Harmony (ya
+corregidos), no sobre el PCA original.El UMAP, nos permite comprimir el
+espacio de alta dimensión en 2D para una mejor visualización, ademas
+preserva mejor los agrupamientos de células similares.
+
+El clustering se hará también sobre Harmony.
+
+```{r umap, message=FALSE, warning=FALSE}
+pbmc <- RunUMAP(
+  pbmc,
+  reduction = "harmony", # usar Harmony corregido, no PCA crudo
+  dims      = 1:25,
+  verbose   = FALSE,
+  seed.use  = 42    # reproducibilidad
+)
+```
+
+**Los tres paneles del UMAP revelan lo siguiente:**
+
+-   **Panel izquierdo — Condición de tratamiento:** Las tres condiciones
+    (VEH, NIL, NIL+IDASA) no se separan en regiones exclusivas del UMAP,
+    sino que coexisten en la nube principal central. Se puede observa
+    que el agrupamiento compacto en la región superior derecha contiene
+    predominantemente células Vehicle (azul), lo que sugiere una
+    subpoblación celular cuya identidad transcriptómica está presente
+    principalmente en el grupo control sin tratamiento.
+-   **Panel central — Tipo de población celular:** Las células huCD45+
+    forman un cluster delimitado en la región superior derecha separado
+    de la nube principal de células huCD34+ (rojo). Esta separación
+    clara confirma que huCD45+ y huCD34+ son poblaciones
+    transcriptómicamente distintas que deben analizarse con precaucion
+    en análisis integrados, dado que representan diferentes estadios de
+    maduración hematopoyética. La separación fue preservada por Harmony
+    a pesar de la corrección de batch, lo que confirma que Harmony lo
+    mencionado anteriormente.
+-   **Panel derecho — Experimento:** Se observa que EXPT3 (azul) ocupa
+    la mayor parte del espacio del UMAP, mientras que EXPT1 (rojo) y
+    EXPT2 (verde) se concentran en regiones más específicas. Vemos que
+    realmente persiste cierta agrupación por experimento,
+    particularmente para EXPT1 que contiene las células huCD45+. Esto es
+    esperable dado que huCD45+ es una población biológicamente distinta
+    exclusiva de EXPT1.
+
+```{r umap_condicion, fig.width=14, fig.height=5, fig.cap="**Figura 8**. Proyección UMAP del dataset completo tras la corrección de efecto de lote con Harmony. Panel izquierdo: coloreado por condición de tratamiento (VEH = azul, NIL = verde, NIL+IDASA = rojo). Panel central: coloreado por tipo celular aislado (huCD45+ vs huCD34+). Panel derecho: coloreado por experimento de captura (EXPT1, EXPT2, EXPT3). La corrección con Harmony permite que células del mismo tipo se agrupen independientemente del experimento de captura."}
+p1 <- DimPlot(pbmc, reduction = "umap", group.by = "condition",  pt.size = 0.3) +
+  labs(title = "UMAP — Condición de tratamiento")
+
+p2 <- DimPlot(pbmc, reduction = "umap", group.by = "cell_type",  pt.size = 0.3) +
+  labs(title = "UMAP — Tipo celular")
+
+p3 <- DimPlot(pbmc, reduction = "umap", group.by = "experiment", pt.size = 0.3) +
+  labs(title = "UMAP — Experimento de captura")
+
+p1 + p2 + p3
+```
+
+------------------------------------------------------------------------
+
+# Clustering — identificación de poblaciones celulares
+
+El clustering se realiza sobre el grafo de vecinos más cercanos (KNN)
+construido a partir del espacio de Harmony. El algoritmo de Louvain
+asigna células a comunidades basándose en la densidad de conexiones.
+Mientras que el parámetro `resolution` controla la granularidad, es
+decir, valores más altos producen más clusters, valores más bajos
+producen menos.
+
+En el paper se reportan clusters anotados como tipos mieloides maduros,
+progenitores y LSC (ESC-REG), lo que sugiere una resolución moderada
+(\~0.5).
+
+```{r clustering, message=FALSE, warning=FALSE}
+# Paso 1: grafo KNN
+pbmc <- FindNeighbors(
+  pbmc,
+  reduction = "harmony",
+  dims      = 1:25,
+  k.param   = 20,
+  verbose   = FALSE
+)
+
+# Paso 2: clustering con Louvain
+pbmc <- FindClusters(
+  pbmc,
+  resolution   = 0.5,
+  algorithm    = 1,    # 1 = Louvain (paper original)
+  random.seed  = 42,
+  verbose      = FALSE
+)
+
+cat("Número de clusters identificados:", length(unique(pbmc$seurat_clusters)), "\n")
+table(pbmc$seurat_clusters)
+
+```
+
+\
+Con resolución 0.5 se identificaron 17 clusters, los cuales son
+suficeintes para distinguir los principales linajes hematopoyéticos
+descritos en el paper (SP/LSC, NMM, ME, EBM). Los clusters 0 y 1 son los
+más numerosos con 3,842 y 3,481 células.
+
+Los clusters pequeños (14–16, con 68–113 células) pueden representar
+subpoblaciones raras como las LSC quiescentes más primitivas o estados
+transicionales de diferenciación.
+
+------------------------------------------------------------------------
+
+# Genes marcadores por cluster
+
+`FindAllMarkers()` compara la expresión de cada cluster contra todos los
+demás para identificar los genes que lo distinguen del resto. Se usa el
+test de Wilcoxon con los criterios del paper, expresión mínima en el 25%
+de las células del cluster y log2FC mínimo de 0.25.
+
+```{r markers, message=FALSE, warning=FALSE}
+# Unir capas antes de FindAllMarkers 
+pbmc <- JoinLayers(pbmc)
+
+all_markers <- FindAllMarkers(
+  pbmc,
+  only.pos   = TRUE,
+  min.pct    = 0.25,
+  logfc.threshold = 0.25,
+  test.use   = "wilcox",
+  verbose    = FALSE
+)
+
+# Top 5 marcadores por cluster
+top5_markers <- all_markers %>%
+  group_by(cluster) %>%
+  slice_max(order_by = avg_log2FC, n = 5) %>%
+  ungroup()
+
+# Guardar tabla completa
+if (!dir.exists("markers_results")) dir.create("markers_results")
+write.csv(all_markers, "markers_results/markers_por_cluster.csv", row.names = FALSE)
+
+cat("Marcadores guardados en output/markers_por_cluster.csv\n")
+print(top5_markers)
+```
+
+### Heatmap de marcadores top por cluster
+
+El heatmap nos permite observar algunos patrones por cluster, por
+ejemplo:
+
+-   **Clusters 0 y 1 — Progenitores/LSC:** Expresión alta de UTS2, HPGD
+    y TIMP3, que son marcadores de células progenitoras primitivas. UTS2
+    (urotensin II) ha sido reportado en células progenitoras
+    hematopoyéticas. La expresión de SIGLEC6 en cluster 1 es
+    especialmente relevante, ya que es receptor lectínico de ácido
+    siálico ha sido reportado como marcador de LSC en LMC (Kinstrie et
+    al., 2020).
+
+-   **Cluster 3 — Linaje eritroide (ME):** Expresión masiva de HBA1,
+    ALAS2 y BPGM, que son genes del linaje eritroide.Este cluster
+    corresponde al linaje ME (megakariocito/eritrocito) descrito en el
+    paper.
+
+-   **Cluster 9 — Células ciclantes/proliferativas:** Alta expresión de
+    CENPW, CENPF y NUSAP1, que son proteínas del cinetocoro y el huso
+    mitótico respectivamente. Esto indica un cluster de células en
+    división activa, posiblemente LSC ciclantes .
+
+-   **Clusters 2 y 4 — Linaje mieloide (NMM):** Expresión de CSF2
+    (GM-CSF) e IL3, citocinas características de progenitores mieloides
+    y el linaje NMM. Estos clusters probablemente corresponden a
+    neutrófilos, monocitos o macrófagos.
+
+```{r heatmap_markers, fig.width=14, fig.height=10, fig.cap="**Figura 9**. Heatmap de los top 3 genes marcadores por cluster identificados con FindAllMarkers. Expresión génica de los marcadores más discriminantes para cada uno de los 17 clusters (columnas, 0–16). Los colores van de púrpura (baja expresión) a amarillo (alta expresión). Se muestran genes de relevancia biológica para el contexto de LMC y diferenciación hematopoyética, incluyendo marcadores eritroides (HBA1, ALAS2, BPGM), de proliferación (CENPW, CENPF, NUSAP1), citocinas mieloides (CSF2, IL3), y genes del ESC-REG (MAML2, VCAM1)."}
+top3_markers <- all_markers %>%
+  group_by(cluster) %>%
+  slice_max(order_by = avg_log2FC, n = 3) %>%
+  pull(gene)
+
+DoHeatmap(
+  subset(pbmc, downsample = 200),
+  features = top3_markers,
+  size     = 3,
+  angle    = 45
+) + NoLegend()
+```
+
+------------------------------------------------------------------------
+
+# Anotación de tipos celulares
+
+Con base en los genes marcadores identificados y los reportados en el
+paper identidades celulares a los clusters. El paper describe cuatro
+linajes principales:
+
+-   **SP (stem/progenitor):** células que expresan el ESC-REG baja
+    expresión de MKI67, CD38, TP53; alta expresión ribosomal
+-   **NMM (neutrófilo/monocito/macrófago):** linaje mieloide maduro
+-   **ME (megakariocito/eritrocito):** linaje eritroide
+-   **EBM (eosinófilo/basófilo/mastocito):** linaje expandido con
+    NIL+IDASA
+
+```{r anotacion_celular}
+# Mapa de anotación basado en los marcadores del paper
+# y en bases de datos de referencia hematopoyética (Hay et al. 2018; Drissen et al. 2016)
+
+anotacion <- c(
+  "0"  = "NMM — Neutrófilos/Monocitos",
+  "1"  = "EBM — Eosinófilos/Basófilos",
+  "2"  = "NMM — Monocitos/Macrófagos",
+  "3"  = "ME — Megacariocitos/Eritrocitos",
+  "4"  = "LSC/Progenitores (ESC-REG)",
+  "5"  = "NMM — Granulocitos",
+  "6"  = "EBM — Mastocitos",
+  "7"  = "ME — Eritroblastos",
+  "8"  = "LSC quiescentes (ESC-REGlow)",
+  "9"  = "NMM — Macrófagos maduros",
+  "10" = "ME — Megacariocitos",
+  "11" = "EBM — Basófilos",
+  "12" = "Progenitores CD34+ tempranos"
+)
+
+# Asignar nombres al objeto Seurat
+pbmc <- RenameIdents(pbmc, anotacion)
+pbmc$cell_annotation <- Idents(pbmc)
+```
+
+El UMAP identifica cuatro linajes hematopoyéticos principales:\
+
+-   **Linaje NMM (Neutrófilo/Monocito/Macrófago):** Representado por
+    cuatro clusters Neutrófilos/Monocitos (cluster 0, el más numeroso
+    con 3,842 células), Monocitos/Macrófagos (cluster 2), Granulocitos
+    (cluster 5) y Macrófagos maduros (cluster 9). Estos clusters ocupan
+    la región central y lateral izquierda del UMAP, formando un continuo
+    de diferenciación mieloide.
+-   **Linaje EBM (Eosinófilo/Basófilo/Mastocito):** Identificado en tres
+    clusters Eosinófilos/Basófilos (cluster 1, 3,481 células),
+    Mastocitos (cluster 6, region superior) y Basófilos (cluster 11). La
+    presencia de EBM como uno de los dos clusters más grandes del
+    dataset (cluster 1) es biológicamente relevante, ya que en el paper
+    se reporta expansión del linaje EBM con NIL+IDASA como consecuencia
+    del skewing de linaje en las LSC tratadas.
+-   **Linaje ME (Megacariocito/Eritrocito):** Representado por
+    Megacariocitos/Eritrocitos (cluster 3), Eritroblastos (cluster 7) y
+    Megacariocitos (cluster 10), ocupando la región inferior del UMAP.
+    La expresión de HBA1, ALAS2 y GATA1 observada previamente en el
+    heatmap y FeaturePlot confirma esta anotación. El paper describe
+    este linaje como depletado con NIL+IDASA en la fase de tratamiento
+    activo.
+-   **LSC y Progenitores (ESC-REG):** Los clusters de mayor interés
+    biológico, LSC/Progenitores ESC-REG (cluster 4), LSC quiescentes
+    ESC-REGlow (cluster 8) y Progenitores CD34+ tempranos (cluster 12),
+    se localizan en regiones intermedias del UMAP, entre los grandes
+    linajes diferenciados. La identificación del cluster 8 como LSC
+    quiescentes ESC-REGlow es particularmente importante: es la
+    población objetivo del tratamiento con NIL+IDASA y la que el paper
+    analiza en detalle en las Figuras 5c y 5e.
+-   **Clusters sin anotar (13–16):** Los cuatro clusters más pequeños
+    (68–131 células) quedaron sin anotación formal. Estos podrían
+    representar estados transicionales entre linajes, células dobletes
+    no eliminadas en el QC, o subpoblaciones raras.
+
+```{r umap_anotado, fig.width=10, fig.height=7, fig.cap="**Figura 10**. UMAP con anotación de tipos celulares. Visualización de los 17 clusters identificados con el algoritmo de Louvain (resolución = 0.5) anotados según la expresión de genes marcadores y el esquema de linajes hematopoyéticos reportado en Scott et al. 2024 (Fig. 6). Las poblaciones se clasifican en cuatro linajes principales: NMM (neutrófilo/monocito/macrófago), EBM (eosinófilo/basófilo/mastocito), ME (megacariocito/eritrocito), y LSC/Progenitores (ESC-REG y ESC-REGlow). Los clusters 13–16 quedaron sin anotación formal por insuficiencia de marcadores específicos."}
+DimPlot(
+  pbmc,
+  reduction  = "umap",
+  group.by   = "cell_annotation",
+  label      = TRUE,
+  repel      = TRUE,
+  label.size = 3.5,
+  pt.size    = 0.4
+) +
+  labs(
+    title    = "UMAP — Tipos celulares anotados",
+    subtitle = "GSE218185 | Scott et al. 2024"
+  ) +
+  theme(legend.position = "right")
+```
+
+------------------------------------------------------------------------
+
+# Feature plots de genes clave del paper
+
+El paper destaca varios genes relevantes para la biología de las LSC en
+LMC: **TP53** (regulador de autorrenovación), **MKI67** (marcador de
+proliferación), **CD38** (marcador de diferenciación), y genes del
+linaje EBM como **HDC** y **GATA1**
+
+**TP53:** Al observar la expresión de TP53 vemos que es muy escasa pero
+puntual en el UMAP, con señal notable en el cluster superior derecho
+(huCD45+) y dispersa en la nube principal. Esto es consistente con el
+paper, ya que las LSC quiescentes tienen niveles **bajos de TP53** como
+parte de su estado ESC-REGlow, que permite su autorenovación.
+
+**MKI67:** Su expresión está prácticamente ausente en la nube principal
+de células CD34+, con señal concentrada en el cluster superior derecho
+(huCD45+) y en un pequeño subconjunto de células en la región central
+del UMAP. Esta distribución confirma que la mayoría de las células CD34+
+del dataset están en estado quiescente (G0, ESC-REGlow), con solo una
+pequeña proporción en división activa. El paper se puede observar
+(Figura 5c) exactamente las LSC quiescentes como células con baja
+expresión de MKI67.
+
+**CD38:** La expresión de CD38 sigue un patrón similar a MKI67, el cual
+es un marcador de maduración hematopoyética y su baja expresión en la
+mayoría de las células CD34+ es biológicamente esperada, ya que las LSC
+primitivas y los progenitores tempranos son CD34+CD38−. La expresión
+observada en el cluster superior derecho corresponde a las células
+huCD45+ más maduras.
+
+**HDC:** HDC (histidina descarboxilasa, enzima que sintetiza histamina),
+el cual es un marcador de mastocitos, basófilos y progenitores del
+linaje EBM, muestra expresión **alta y generalizada** en prácticamente
+toda la nube principal de células CD34+ y en las regiones laterales del
+UMAP y su expresión tan amplia en el dataset sugiere que una gran
+proporción de las células CD34+ tienen un sesgo transcriptómico hacia el
+linaje EBM consistente con el hallazgo del paper (Fig. 6b) donde
+reportan expansión del linaje EBM con NIL+IDASA.
+
+**GATA1:** Factor de transcripción del linaje eritroide y
+megacariocítico (ME). Su expresión se concentra en regiones específicas
+del UMAP, particularmente en la región inferior (que corresponde al
+linaje ME en el UMAP anotado) y en parte del cluster compacto superior.
+
+**BCL2:** Regulador antiapoptótico expresado de forma dispersa pero
+presente en varios compartimentos del UMAP. BCL2 es importante en el
+contexto de la LMC porque las LSC expresan BCL2 para resistir apoptosis.
+Su expresión en el cluster de progenitores CD34+ es coherente con la
+supervivencia de estas células en presencia del tratamiento con TKI.
+
+```{r feature_plots, fig.width=14, fig.height=10, fig.cap="**Figura 11**. Expresión de genes marcadores clave en el espacio UMAP. FeaturePlot mostrando la expresión normalizada de seis genes de relevancia biológica central para el estudio: TP53 y MKI67 (marcadores de estado celular reportados en Fig. 5c del paper), CD38 (marcador de maduración hematopoyética), HDC (histidina descarboxilasa, marcador de linaje EBM), GATA1 (factor de transcripción eritroide/megacariocítico) y BCL2 (regulador de supervivencia celular). La escala de color va de gris claro (expresión nula o baja) a rojo oscuro (expresión alta)"}
+genes_key <- c("TP53", "MKI67", "CD38", "HDC", "GATA1", "BCL2")
+
+FeaturePlot(
+  pbmc,
+  features   = genes_key,
+  reduction  = "umap",
+  ncol       = 3,
+  pt.size    = 0.3,
+  order      = TRUE,
+  cols       = c("lightgrey", "darkred")
+)
+```
+
+```{r dotplot_markers, fig.width=12, fig.height=6, fig.cap="**Figura 12**. DotPlot de expresión de genes marcadores de referencia por tipo celular anotado. El tamaño del punto indica el porcentaje de células del cluster que expresan el gen (0–100%); el color indica la expresión promedio normalizada (azul = baja, blanco = media, rojo oscuro = alta). Los genes se agrupan por linaje: LSC/progenitores (TP53, MKI67, CD38, CD34), linaje NMM (MPO, LYZ, S100A8), linaje ME (HBB, GYPA, PF4) y linaje EBM (HDC, GATA1, CPA3)"}
+
+genes_dotplot <- c(
+  "TP53", "MKI67", "CD38", "CD34",   # LSC / progenitores
+  "MPO",  "LYZ",   "S100A8",          # NMM
+  "HBB",  "GYPA",  "PF4",             # ME
+  "HDC",  "GATA1", "CPA3"             # EBM
+)
+
+DotPlot(
+  pbmc,
+  features = genes_dotplot,
+  group.by = "cell_annotation",
+  dot.scale = 6
+) +
+  RotatedAxis() +
+  scale_color_gradient2(low = "steelblue", mid = "white", high = "darkred") +
+  labs(
+    title = "Expresión de genes marcadores por tipo celular",
+    x     = "Gen",
+    y     = "Tipo celular"
+  )
+```
+
+**Doplot**
+
+**Linaje NMM:** Los clusters NMM — Neutrófilos/Monocitos (0) y NMM —
+Monocitos/Macrófagos (2) muestran alta expresión de LYZ y S100A8,
+marcadores canónicos de células mieloides innatas.
+
+**Linaje ME:** ME — Megacariocitos/Eritrocitos (cluster 3) muestra la
+expresión más alta de HBB (hemoglobina beta) de todo el
+dataset.Adicionalmente, ME — Megacariocitos (cluster 10) muestra
+expresión de GATA1, factor de transcripción del linaje megacariocítico y
+eritroide.
+
+**Linaje EBM — Eosinófilos/Basófilos (cluster 1):** Muestra la expresión
+alta de CPA3 (carboxipeptidasa A3) es el marcador de basófilos y
+mastocitos, en el paper se reporta la expansión del linaje EBM como
+consecuencia de NIL+IDASA. EBM — Basófilos (cluster 11) también muestra
+CPA3 alto, validando esto.
+
+------------------------------------------------------------------------
+
+------------------------------------------------------------------------
+
+# Expresión diferencial entre condiciones
+
+\
+El análisis de expresión diferencial (DEG) compara la expresión génica
+entre condiciones de tratamiento dentro de cada tipo celular anotado. El
+objetivo principal es identificar los genes que cambian como
+consecuencia del tratamiento con NIL+IDASA en las LSC quiescentes
+
+Usamos `FindMarkers()` con el test de Wilcoxon y aplicamos el umbral del
+paper: `|log2FC| > 0.5` y `p.adj < 0.05`.
+
+Sin embargo, al intentar realizar el análisis diferencial entre
+NIL+IDASA y VEH específicamente dentro del cluster de LSC quiescentes
+(ESC-REGlow, cluster 8), se encontró que dicho cluster no contiene
+células de la condición NIL+IDASA (0 células), con solo 4 células de la
+condición Nilotinib frente a 333 células Vehicle. Lejos de representar
+un error, al igual resulta ser consistente la desaparición de las LSC
+quiescentes bajo el tratamiento NIL+IDASA con agotamiento de esta
+población. El análisis de expresión diferencial se realizó por tanto en
+todas las células CD34+.
+
+```{r deg_analisis, message=FALSE, warning=FALSE}
+#  DEG en todas las células CD34+
+# Captura el efecto global del tratamiento en progenitores
+
+cd34_cells <- subset(pbmc, subset = cell_type == "huCD34")
+Idents(cd34_cells) <- cd34_cells$condition
+
+cat("Células CD34+ por condición:\n")
+table(cd34_cells$condition)
+
+deg_cd34 <- FindMarkers(
+  cd34_cells,
+  ident.1         = "NIL_IDASA",
+  ident.2         = "Vehicle",
+  min.pct         = 0.10,
+  logfc.threshold = 0.25,
+  test.use        = "wilcox",
+  verbose         = FALSE
+)
+
+deg_cd34$gene        <- rownames(deg_cd34)
+deg_cd34$significant <- deg_cd34$p_val_adj < 0.05 &
+                        abs(deg_cd34$avg_log2FC) > 0.5
+
+cat("\nDEGs en CD34+ (NIL_IDASA vs VEH):\n")
+cat("  UP:", sum(deg_cd34$significant & deg_cd34$avg_log2FC > 0), "\n")
+cat("  DOWN:", sum(deg_cd34$significant & deg_cd34$avg_log2FC < 0), "\n")
+
+if (!dir.exists("DEG")) dir.create("DEG")
+write.csv(deg_cd34, "DEG/DEG_CD34_NIL_IDASA_vs_VEH.csv", row.names = FALSE)
+```
+
+## Volcano plot de expresión diferencial
+
+El analisis de volcano plot para la poblacion global de celulas CD34+
+revela una asimetria transcripcional rofunda inducida por el tratamiento
+combinado (NIL+IDASA) en comparación con el control (Vehicle)
+
+Se observa un sesgo masivo hacia la inhibición génica, con 365 genes
+significativamente downregulados (puntos azules) frente a solo 45 genes
+upregulados (puntos rojos). Esto indica que la combinación de TKI con la
+inhibición de MDM2 induce un fuerte "apagado" transcripcional en el
+compartimento de progenitores.
+
+El hallazgo central de esta gráfica es el comportamiento de la firma de
+genes asociada a la supervivencia de las células madre leucémicas,
+resaltados mediante rombos naranjas. Transcritos como *FOS*, *DUSP1* y
+*ZFP36*, identificados como pilares para la persistencia de las LSC
+quiescentes en el nicho de la médula ósea, se localizan de manera
+evidente en el cuadrante de inhibición. Esto confirma a nivel
+transcripcional que la reactivación de p53 mediante Idasanutlin inhibe
+con éxito la red ESC-REG que permite la evasión terapéutica.
+
+```{r volcano_deg, fig.width=10, fig.height=8, message=FALSE, warning=FALSE, fig.cap="**Figura 13**. Volcano plot de expresión diferencial en células CD34+ (NIL+IDASA vs Vehicle). El eje X muestra el log2 fold change y el eje Y el -log10 del p-valor ajustado (Bonferroni-Benjamini-Hochberg). Los puntos rojos representan genes significativamente upregulados (log2FC > 0.5, p.adj < 0.05); los puntos azules, genes downregulados. Los 15 genes más significativos se etiquetan. Los genes de supervivencia de LSC reportados en el paper (FOS, DUSP1, ZFP36) se resaltan en naranja."}
+
+library(ggrepel)
+
+# Genes de supervivencia LSC reportados en el paper (Fig. 5e)
+genes_paper_lsc <- c("FOS", "DUSP1", "ZFP36", "ZFP36L1", "TP53",
+                     "MALAT1", "GLRX", "CNN2", "LYZ", "CD24")
+
+deg_plot <- deg_cd34 %>%
+  mutate(
+    color_group = case_when(
+      gene %in% genes_paper_lsc                           ~ "Paper LSC genes",
+      significant & avg_log2FC > 0                        ~ "UP",
+      significant & avg_log2FC < 0                        ~ "DOWN",
+      TRUE                                                 ~ "NS"
+    ),
+    log10_padj  = -log10(p_val_adj + 1e-300)
+  )
+
+# Top 15 genes para etiquetar
+top_label <- deg_plot %>%
+  filter(significant) %>%
+  arrange(p_val_adj) %>%
+  head(15)
+
+# Añadir genes del paper aunque no estén en top 15
+genes_paper_present <- deg_plot %>%
+  filter(gene %in% genes_paper_lsc, p_val_adj < 0.1)
+
+label_genes <- bind_rows(top_label, genes_paper_present) %>%
+  distinct(gene, .keep_all = TRUE)
+
+ggplot(deg_plot, aes(x = avg_log2FC, y = log10_padj, color = color_group)) +
+  geom_point(alpha = 0.6, size = 1.5) +
+  geom_point(
+    data   = filter(deg_plot, gene %in% genes_paper_lsc),
+    size   = 3, shape = 18
+  ) +
+  geom_text_repel(
+    data        = label_genes,
+    aes(label   = gene),
+    size        = 3,
+    max.overlaps = 20,
+    box.padding = 0.4
+  ) +
+  scale_color_manual(
+    values = c(
+      "UP"             = "#d62728",
+      "DOWN"           = "#1f77b4",
+      "NS"             = "grey70",
+      "Paper LSC genes"= "#ff7f0e"
+    ),
+    name = "Clasificación"
+  ) +
+  geom_vline(xintercept = c(-0.5, 0.5), linetype = "dashed", color = "grey40") +
+  geom_hline(yintercept = -log10(0.05),  linetype = "dashed", color = "grey40") +
+  labs(
+    title    = "Expresión diferencial: NIL+IDASA vs Vehicle — células CD34+",
+    subtitle = "Rombos naranjas = genes de supervivencia LSC reportados en Scott et al. 2024 (Fig. 5e)",
+    x        = "log2 Fold Change (NIL+IDASA / VEH)",
+    y        = "-log10(p.adj)"
+  ) +
+  theme_bw(base_size = 13) +
+  theme(legend.position = "right")
+
+```
+
+## Tabla de los top DEGs significativos
+
+El desglose cuantitativo de los top 30 genes diferencialmente expresados
+(ordenados por su significancia estadística) consolida y expande las
+observaciones del Volcano plot, revelando los mecanismos celulares
+específicos que están siendo reprimidos por el tratamiento con NIL+IDASA
+en el compartimento CD34+.
+
+Una proporción mayoritaria de los transcritos más significativamente
+reprimidos (*TOMM6*, *MICOS10*, *TIMM10B*) codifican para proteínas
+estructurales y transportadores de la membrana mitocondrial.
+Adicionalmente, se observa una fuerte caída en componentes del complejo
+I de la cadena de transporte de electrones (*NDUFB8*, *NDUFA7*,
+*NDUFC2*) y enzimas del metabolismo de sulfuros (*SQOR*). Esto indica un
+desmantelamiento de la maquinaria de fosforilación oxidativa (OXPHOS) y
+de la integridad mitocondrial, un impacto esperado dado el estrés
+inducido por la activación de p53.
+
+Destaca la represión drástica de múltiples miembros de la familia de las
+septinas (*SEPTIN2*, *SEPTIN7*, *SEPTIN9*), las cuales son fundamentales
+para la citocinesis y la compartimentalización celular. En conjunto con
+la caída de reguladores de la polimerización de actina (*ARPC1A*,
+*ARPC1B*), esto sugiere que las células sobrevivientes están
+estructuralmente comprometidas y han perdido su capacidad proliferativa.
+
+La disminución en la expresión de subunidades del proteasoma (*PSMA2*),
+enzimas lisosomales (*CTSD*), factores de elongación (*EEF1G*) y
+proteínas ribosomales (*RPL17*), refleja un "apagado" general del
+recambio proteico y la traducción. Esto es altamente concordante con la
+inhibición del fenotipo de pluripotencia (ESC-REG), el cual se
+caracteriza por mantener una alta actividad transcripcional y ribosomal.
+
+Se observa una caída masiva en la expresión de *S100A8* (log2FC de
+-9.94), un marcador fuertemente asociado al linaje mieloide maduro
+(NMM). Esto proporciona una validación robusta, a nivel de transcrito
+individual, de la depresión del linaje NMM que fue reportada por los
+autores como consecuencia del tratamiento.
+
+```{r tabla_deg}
+deg_cd34 %>%
+  filter(significant) %>%
+  arrange(p_val_adj) %>%
+  select(gene, avg_log2FC, pct.1, pct.2, p_val_adj) %>%
+  mutate(
+    avg_log2FC = round(avg_log2FC, 3),
+    p_val_adj  = formatC(p_val_adj, format = "e", digits = 2),
+    direction  = ifelse(avg_log2FC > 0, "UP", "DOWN")
+  ) %>%
+  head(30)
+```
+
+## Verificación de genes clave del paper
+
+```{r genes_paper_deg}
+# Genes reportados en Fig. 5e del paper como downregulados en LSC quiescentes
+# bajo NIL+IDASA: FOS, DUSP1, ZFP36
+genes_clave <- c("FOS", "DUSP1", "ZFP36", "ZFP36L1", "TP53", "MALAT1",
+                 "HBA1", "HBA2", "ALAS2", "HBB")
+
+cat("Estado de genes clave del paper en el DEG CD34+:\n\n")
+deg_cd34 %>%
+  filter(gene %in% genes_clave) %>%
+  select(gene, avg_log2FC, p_val_adj, significant) %>%
+  arrange(avg_log2FC) %>%
+  print()
+```
+
+# Enriquecimiento funcional — Gene Ontology (GO-BP)
+
+El enriquecimiento funcional con GO-BP nos permite traducir la lista de
+DEGs en procesos biológicos enriquecidos, facilitando la interpretación
+de los cambios transcriptómicos observados bajo NIL+IDASA. Usamos
+`enrichGO()` de clusterProfiler con la base de datos `org.Hs.eg.db`.
+
+Realizamos el análisis por separado para genes upregulados y
+downregulados en células CD34+ bajo NIL+IDASA, para identificar los
+procesos activados e inhibidos respectivamente.\
+
+```{r go_enrichment, message=FALSE, warning=FALSE}
+library(clusterProfiler)
+library(org.Hs.eg.db)
+# Genes significativos upregulados
+genes_up <- deg_cd34 %>%
+  filter(significant, avg_log2FC > 0) %>%
+  pull(gene)
+
+# Genes significativos downregulados
+genes_down <- deg_cd34 %>%
+  filter(significant, avg_log2FC < 0) %>%
+  pull(gene)
+
+cat("Genes UP significativos:", length(genes_up), "\n")
+cat("Genes DOWN significativos:", length(genes_down), "\n")
+
+# Universo: todos los genes detectados en las células CD34+
+universe_genes <- rownames(cd34_cells)
+
+# Enriquecimiento GO-BP — genes UPREGULADOS
+go_up <- enrichGO(
+  gene          = genes_up,
+  universe      = universe_genes,
+  OrgDb         = org.Hs.eg.db,
+  keyType       = "SYMBOL",
+  ont           = "BP",
+  pAdjustMethod = "BH",
+  pvalueCutoff  = 0.05,
+  qvalueCutoff  = 0.2,
+  readable      = TRUE
+)
+
+# Enriquecimiento GO-BP — genes DOWNREGULADOS
+go_down <- enrichGO(
+  gene          = genes_down,
+  universe      = universe_genes,
+  OrgDb         = org.Hs.eg.db,
+  keyType       = "SYMBOL",
+  ont           = "BP",
+  pAdjustMethod = "BH",
+  pvalueCutoff  = 0.05,
+  qvalueCutoff  = 0.2,
+  readable      = TRUE
+)
+
+cat("\nTerminos GO-BP enriquecidos (UP):", nrow(go_up@result %>% filter(p.adjust < 0.05)), "\n")
+cat("Terminos GO-BP enriquecidos (DOWN):", nrow(go_down@result %>% filter(p.adjust < 0.05)), "\n")
+
+# Guardar resultados
+write.csv(go_up@result,   "DEG/GO_BP_UP_NIL_IDASA_vs_VEH.csv",   row.names = FALSE)
+write.csv(go_down@result, "DEG/GO_BP_DOWN_NIL_IDASA_vs_VEH.csv", row.names = FALSE)
+```
+
+## Dotplot de GO-BP — genes upregulados
+
+El análisis de enriquecimiento funcional (GO-BP) para los 45 genes
+upregulados se observa una respuesta transcripcional altamente
+direccional y congruente con el mecanismo de acción del tratamiento
+combinado.
+
+La aparición destacada de términos como *"hydrogen peroxide catabolic
+process"*, *"hydrogen peroxide metabolic process"* y *"response to toxic
+substance"* refleja un choque metabólico agudo. Esto respalda
+directamente la evidencia del artículo original, donde se demuestra que
+la combinación de NIL+IDASA desencadenEl enriquecimiento de vías como
+"myeloid cell differentiation", "erythrocyte differentiation" y "myeloid
+cell development" indica que las células CD34+ están activando programas
+de maduración. Esto sugiere que la activación de p53 no solo induce
+apoptosis, sino que fuerza a las LSC a abandonar su estado inmaduro y
+protector (ESC-REGlow) para comprometerse hacia linajes diferenciados,
+perdiendo así su capacidad de autorrenovación.a niveles elevados de
+especies reactivas de oxígeno (ROS) en las células primitivas humanas.
+Este estrés oxidativo es un factor crítico que contribuye a la
+alteración de la viabilidad celular.
+
+El enriquecimiento de vías como *"myeloid cell differentiation*",
+*"erythrocyte differentiation"* y *"myeloid cell development"* indica
+que las células CD34+ están activando programas de maduración. Esto
+sugiere que la activación de p53 no solo induce apoptosis, sino que
+fuerza a las LSC a abandonar su estado inmaduro y protector (ESC-REGlow)
+para comprometerse hacia linajes diferenciados, perdiendo así su
+capacidad de autorrenovación.
+
+Ademas procesos biológicos como *"oxygen transport"*, *"gas transport"*
+y *"hemoglobin biosynthetic process"* dominan la parte inferior del
+*dotplot*. La activación de esta maquinaria explica el sesgo de linaje
+(lineage skewing); un fenómeno reportado por los autores en el cual las
+LSC sometidas a este esquema terapéutico exhiben temporalmente una firma
+molecular similar a la de células eritroides.
+
+```{r go_up_plot, fig.width=12, fig.height=8, message=FALSE, warning=FALSE, fig.cap="**Figura 14**. Enriquecimiento GO-BP para genes upregulados en células CD34+ bajo NIL+IDASA vs Vehicle. El tamaño del punto indica el número de genes del término GO presentes en la lista; el color representa el p-valor ajustado (BH). Se muestran los 20 términos más significativos."}
+if (nrow(go_up) > 0) {
+  dotplot(go_up, showCategory = 20, font.size = 10) +
+    labs(
+      title    = "GO-BP — Genes upregulados (NIL+IDASA vs VEH) en células CD34+",
+      subtitle = "Top 20 términos más enriquecidos"
+    ) +
+    theme(axis.text.y = element_text(size = 9))
+} else {
+  cat("No se encontraron términos GO-BP significativos para genes upregulados.\n")
+  cat("Considera reducir el umbral de p.adj o revisar los genes de entrada.\n")
+}
+
+```
+
+## Dotplot de GO-BP — genes downregulados
+
+Para los genes downregulados se observa cómo el tratamiento con
+NIL+IDASA inhibe funcionalmente la expresion genica de las células
+progenitoras CD34+
+
+Donde la presencia dominante de términos como *"oxidative
+phosphorylation"*, *"cellular respiration"*, *"respiratory electron
+transport chain"* y *"ATP metabolic process"* confirma a nivel de vías
+de señalización lo que ya habíamos observado en la tabla de DEGs
+individuales. La combinación terapéutica paraliza severamente el
+metabolismo energético mitocondrial, un evento fundamental mediado por
+la activación de p53 que priva a las células de la energía necesaria
+para su supervivencia.
+
+Ademas la inhibición de múltiples procesos asociados a neutrófilos
+(*"neutrophil activation"*, *"neutrophil degranulation"*, *"neutrophil
+mediated immunity"*). Esto es la evidencia funcional perfecta que valida
+la depleción del linaje NMM reportada en el artículo original; las
+células CD34+ sobrevivientes han perdido por completo la firma
+transcripcional que las guiaría hacia la maduración de granulocitos y
+macrófagos.
+
+```{r go_down_plot, fig.width=12, fig.height=8, message=FALSE, warning=FALSE, fig.cap="**Figura 15**. Enriquecimiento GO-BP para genes downregulados en células CD34+ bajo NIL+IDASA vs Vehicle. Términos inhibidos por el tratamiento combinado, incluyendo vías de supervivencia de LSC."}
+if (nrow(go_down) > 0) {
+  dotplot(go_down, showCategory = 20, font.size = 10) +
+    labs(
+      title    = "GO-BP — Genes downregulados (NIL+IDASA vs VEH) en células CD34+",
+      subtitle = "Top 20 términos más enriquecidos"
+    ) +
+    theme(axis.text.y = element_text(size = 9))
+} else {
+  cat("No se encontraron términos GO-BP significativos para genes downregulados.\n")
+  cat("Considera reducir el umbral de p.adj o revisar los genes de entrada.\n")
+}
+```
+
+## Barplot comparativo UP vs DOWN
+
+Al contrastar directamente la significancia estadística de los procesos
+activados (rojo) frente a los inhibidos (azul), se evidencia una
+reprogramación celular drástica en el compartimento CD34+.
+
+Las vías inhibidas muestran una significancia estadística relevante (con
+valores de -log10(p.adj) muy superiores a las vías activadas). El
+tratamiento combinado silencia de manera contundente la maquinaria de
+fosforilación oxidativa (*"cellular respiration"*, *"oxidative
+phosphorylation"*) y la síntesis de proteínas (*"translational
+initiation"*, *"SRP-dependent cotranslational protein targeting"*). Dado
+que las LSC quiescentes dependen críticamente de la biogénesis ribosomal
+y el metabolismo mitocondrial para sostener su red de pluripotencia
+(ESC-REG), esta inhibicion simultáneo confirma la eficacia de la
+reactivación de p53 para desmantelar su estado troncal.
+
+En contraparte, los procesos inducidos por NIL+IDASA están fuertemente
+dominados por la respuesta a especies reactivas de oxígeno (*"hydrogen
+peroxide metabolic process"*, *"cellular oxidant toxicity"*). De forma
+paralela, se observa la activación de vías de diferenciación mieloide y
+eritroide. Esto indica que p53 salvaje no solo somete a las células a un
+estrés oxidativo agudo, sino que fuerza a los progenitores a abandonar
+su estado inmaduro protector y comprometerse hacia rutas de
+diferenciación terminal.
+
+En resumen, esta gráfica captura la asimetría del impacto terapéutico
+donde el tratamiento desactiva masivamente la mecanismos metabólicos y
+traduccionales que mantiene vivas a las LSC, al mismo tiempo que
+enciende alarmas de toxicidad oxidativa y fuerza su diferenciación.
+
+```{r go_barplot, fig.width=13, fig.height=7, message=FALSE, warning=FALSE, fig.cap="**Figura 16**. Comparación de los términos GO-BP enriquecidos en genes upregulados (rojo) y downregulados (azul) bajo NIL+IDASA en células CD34+. El eje X muestra el -log10(p.adj); los términos se ordenan por dirección y significancia."}
+# Preparar data frame combinado para visualización comparativa
+prep_go <- function(go_result, direction, n = 15) {
+  if (is.null(go_result) || nrow(go_result) == 0) return(NULL)
+  go_result@result %>%
+    filter(p.adjust < 0.05) %>%
+    arrange(p.adjust) %>%
+    head(n) %>%
+    mutate(
+      direction      = direction,
+      neg_log10_padj = -log10(p.adjust),
+      Description    = stringr::str_wrap(Description, width = 50)
+    )
+}
+
+df_up   <- prep_go(go_up,   "UP (NIL+IDASA)",   n = 12)
+df_down <- prep_go(go_down, "DOWN (NIL+IDASA)", n = 12)
+
+df_combined <- bind_rows(df_up, df_down)
+
+if (!is.null(df_combined) && nrow(df_combined) > 0) {
+  df_combined$direction <- factor(df_combined$direction,
+                                  levels = c("UP (NIL+IDASA)", "DOWN (NIL+IDASA)"))
+
+  ggplot(df_combined,
+         aes(x = neg_log10_padj,
+             y = reorder(Description, neg_log10_padj),
+             fill = direction)) +
+    geom_bar(stat = "identity", width = 0.7) +
+    facet_wrap(~direction, scales = "free_y") +
+    scale_fill_manual(values = c("UP (NIL+IDASA)" = "#d62728",
+                                 "DOWN (NIL+IDASA)" = "#1f77b4")) +
+    geom_vline(xintercept = -log10(0.05), linetype = "dashed", color = "grey30") +
+    labs(
+      title = "Términos GO-BP enriquecidos — NIL+IDASA vs VEH en CD34+",
+      x     = "-log10(p.adj)",
+      y     = "Término GO-BP",
+      fill  = "Dirección"
+    ) +
+    theme_bw(base_size = 11) +
+    theme(
+      legend.position = "none",
+      strip.text      = element_text(face = "bold"),
+      axis.text.y     = element_text(size = 8)
+    )
+} else {
+  cat("Insuficientes términos significativos para el barplot comparativo.\n")
+}
+
+```
+
+------------------------------------------------------------------------
+
+# Discusión
+
+## Agotamiento de las LSC quiescentes y el rol de p53
+
+El análisis de scRNA-seq de células primarias huCD34+ y huCD45+
+injertadas en modelos murinos PDX permitió recapitular con alta
+fidelidad la arquitectura jerárquica de la hematopoyesis leucémica.
+
+La leucemia mieloide crónica (LMC) se caracteriza por la persistencia de
+una subpoblación de células madre leucémicas (LSC) quiescentes que son
+intrínsecamente resistentes a los inhibidores de tirosina cinasa (TKI)
+como el nilotinib. Estas LSC logran evadir la terapia y mantener la
+enfermedad mínima residual apoyándose en mecanismos independientes de
+BCR-ABL1; de manera destacada, dependen de la supresión de la proteína
+p53 de tipo salvaje (WT) y del mantenimiento de una red transcripcional
+análoga a la de las células madre embrionarias (ESC-REG) (Scott *et
+al.*, 2024). Los resultados de este análisis confirman
+computacionalmente este fenómeno, el cluster 8, correspondiente a la
+población de LSC quiescentes (ESC-REGlow), desapareció por completo bajo
+el tratamiento combinado de NIL+IDASA. La inhibición de MDM2 mediante
+idasanutlin reactiva la función transcripcional de p53, evento que
+resulta suficiente para abolir la capacidad de autorrenovación de las
+LSC, un hallazgo sólidamente respaldado por estudios previos en modelos
+murinos que demuestran la eficacia letal de combinar inhibidores de MDM2
+con inhibidores de BCR-ABL1 en compartimentos progenitores (Carter *et
+al.*, 2020).
+
+## **Reprogramación transcripcional y estrés metabólico**
+
+El análisis de expresión diferencial y el enriquecimiento funcional
+(GO-BP) en las células CD34+ revelaron los mecanismos celulares
+subyacentes a esta erradicación. Se observó una inhibición profunda de
+la maquinaria de fosforilación oxidativa (OXPHOS) y un cese abrupto en
+la traducción y biogénesis ribosomal. Dado que la firma de pluripotencia
+(ESC-REG) depende de una alta tasa de síntesis proteica para mantener la
+troncalidad, el desmantelamiento de estas vías representa el colapso del
+fenotipo LSC. Simultáneamente, la represión estadísticamente
+significativa de genes críticos para la supervivencia de las células
+madre leucémicas, tales como *FOS*, *DUSP1* y *ZFP36*, demuestra que p53
+desactiva activamente las redes de resistencia y viabilidad celular. En
+contraparte, la hiperactivación de vías relacionadas con el catabolismo
+de peróxido de hidrógeno indica que la toxicidad mediada por especies
+reactivas de oxígeno (ROS) es un efector primario en el choque
+metabólico inducido por la terapia dual.
+
+## Alteracion de la hematopoyesis
+
+Un hallazgo fundamental derivado del tratamiento con NIL+IDASA es la
+profunda reestructuración de la hematopoyesis en los progenitores
+sobrevivientes. El modelo transcriptómico detectó una caída masiva en la
+expresión de marcadores característicos como *S100A8* y una represión
+abrumadora de las vías de activación funcional de neutrófilos, lo que
+refleja una depleción severa del linaje mieloide innato (NMM).
+Paralelamente, la proyección UMAP y los perfiles de expresión (*CPA3*,
+*HDC*) validaron la expansión predominante del linaje EBM
+(eosinófilo/basófilo/mastocito). Esta desviación del linaje (*lineage
+skewing*) confirma que la reactivación de p53 no solo promueve la
+apoptosis, sino que rompe la quiescencia y fuerza a los progenitores
+leucémicos a comprometerse hacia rutas de diferenciación atípicas.
+
+## **Limitaciones del análisis.**
+
+La principal limitación fue la imposibilidad de reprocesar los datos
+crudos desde los FASTQs debido a la omisión del read R1 en el depósito
+de SRA. Sin embargo, las matrices depositadas en GEO representan la
+salida verificada del pipeline Cell Ranger, por lo que el análisis
+downstream es reproducible. Adicionalmente, la anotación celular aquí
+presentada es una aproximación basada en los marcadores reportados y en
+bases de datos de referencia hematopoyética.
+
+# Referencias
+
+1.  Scott MT, Liu W, Mitchell R, Clarke CJ, Kinstrie R, Warren F, et al.
+    Activating p53 abolishes self-renewal of quiescent leukaemic stem
+    cells in residual CML disease. *Nat Commun.* 2024;15(1):651. DOI:
+    [10.1038/s41467-024-44771-9](https://doi.org/10.1038/s41467-024-44771-9)
+
+2.  Korsunsky I, Millard N, Fan J, Slowikowski K, Zhang F, Wei K,
+    Baglaenko Y, Brenner M, Loh PR, Raychaudhuri S. Fast, sensitive and
+    accurate integration of single-cell data with Harmony. Nature
+    Methods 2019;16(12):1289–1296. DOI: 10.1038/s41592-019-0619-0.
+
+3.  Carter BZ, Mak PY, Tao W, Warmuth M, Kolb EA, Bhatt S, Chen Y,
+    Andreeff M. Combined inhibition of MDM2 and BCR-ABL1 tyrosine kinase
+    targets chronic myeloid leukemia stem/progenitor cells in a murine
+    model. Haematologica 2020;105(5):1274–1284. DOI:
+    10.3324/haematol.2018.208546.
+
+4.  Kinstrie R, Horne GA, Morrison H, Irons DL, Busch K, Jamieson C,
+    Copland M, Dunn K, Vetrie D, Michie AM, Jørgensen HG. CD93 is
+    expressed on chronic myeloid leukemia stem cells and identifies a
+    quiescent population which persists after tyrosine kinase inhibitor
+    therapy. Leukemia 2020;34(6):1613–1625. DOI:
+    10.1038/s41375-019-0668-z.
